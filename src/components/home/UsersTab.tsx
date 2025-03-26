@@ -1,80 +1,70 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  TextInput,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NavigationProp } from '@react-navigation/native';
-import type { RootStackParamList } from '../../types/navigation';
-import { COLORS, SPACING } from '../../constants/theme';
-import userService, { User } from '../../services/user.service';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import UserCard from './UserCard';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
+import type { RootStackParamList } from "../../types/navigation";
+import { COLORS, SPACING } from "../../constants/theme";
+import userService, { User } from "../../services/user.service";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import UserCard from "./UserCard";
+import SearchHeader from "../common/SearchHeader";
+import FiltersModal from "../users/FiltersModal";
 
 type NavigationType = NavigationProp<RootStackParamList>;
 
-type Props = {
-  searchQuery: string;
-};
-
-const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?background=random&size=200&length=2&bold=true&format=png&color=ffffff';
-
-const UsersTab: React.FC<Props> = ({ searchQuery }) => {
+const UsersTab: React.FC = () => {
   const navigation = useNavigation<NavigationType>();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  const [filters, setFilters] = useState({
+    location: "",
+  });
 
   const handleAuthError = async () => {
-    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem("token");
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Login' }],
+      routes: [{ name: "Login" }],
     });
-  };
-
-  const getAvatarUrl = (user: User) => {
-    if (user.avatar) return user.avatar;
-    
-    let initials;
-    try {
-      initials = (user.fullName || user.username).trim().split(/\s+/).map(n => n[0] || '').join('');
-      if (!initials) {
-        initials = user.username.slice(0, 2).toUpperCase();
-      }
-      if (!initials) {
-        initials = 'US';
-      }
-    } catch (e) {
-      initials = 'US';
-    }
-    
-    return `${DEFAULT_AVATAR}&name=${encodeURIComponent(initials)}`;
   };
 
   const fetchUsers = async () => {
     try {
       setError(null);
       setLoading(true);
+      const params: { searchParam?: string; location?: string } = {};
+
+      if (searchQuery) {
+        params.searchParam = searchQuery;
+      }
+
+      if (filters.location && filters.location.trim() !== "") {
+        params.location = filters.location;
+      }
+
       const data = await userService.getUsers(
-        searchQuery ? { searchParam: searchQuery } : undefined
+        Object.keys(params).length > 0 ? params : undefined
       );
       setUsers(data);
     } catch (err: any) {
-      console.error('Error fetching users:', err);
+      console.error("Error fetching users:", err);
       if (err?.response?.status === 401) {
         handleAuthError();
         return;
       }
-      setError('Failed to load users');
+      setError("Failed to load users");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,9 +76,16 @@ const UsersTab: React.FC<Props> = ({ searchQuery }) => {
     fetchUsers();
   };
 
+  const handleApplyFilters = (newFilters: { location?: string }) => {
+    setFilters({
+      location: newFilters.location?.trim() || "",
+    });
+    setFiltersVisible(false);
+  };
+
   useEffect(() => {
     fetchUsers();
-  }, [searchQuery]);
+  }, [searchQuery, filters.location]);
 
   if (loading && !users.length) {
     return (
@@ -114,6 +111,13 @@ const UsersTab: React.FC<Props> = ({ searchQuery }) => {
 
   return (
     <View style={styles.container}>
+      <SearchHeader
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search users"
+        showFilters
+        onFiltersPress={() => setFiltersVisible(true)}
+      />
       <FlatList
         data={users}
         keyExtractor={(item) => item.id}
@@ -132,6 +136,12 @@ const UsersTab: React.FC<Props> = ({ searchQuery }) => {
           />
         }
       />
+      <FiltersModal
+        visible={filtersVisible}
+        onClose={() => setFiltersVisible(false)}
+        onApply={handleApplyFilters}
+        initialFilters={filters}
+      />
     </View>
   );
 };
@@ -143,13 +153,13 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   searchContainer: {
     padding: SPACING.md,
     gap: SPACING.sm,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   searchInput: {
     backgroundColor: COLORS.background,
@@ -172,8 +182,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
   },
   emptyText: {
     color: COLORS.textSecondary,
@@ -181,4 +191,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UsersTab; 
+export default UsersTab;

@@ -58,7 +58,16 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     } catch (err: any) {
       console.error('Error fetching profile:', err);
       if (err?.response?.status === 401) {
-        handleLogout();
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please login again.",
+          [
+            {
+              text: "OK",
+              onPress: handleLogout
+            }
+          ]
+        );
       }
     } finally {
       setLoading(false);
@@ -150,12 +159,35 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    fetchUserProfile();
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const data = await userService.getCurrentUserProfile();
+        if (isMounted) {
+          setUser(data);
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchUserProfile();
+      if (isMounted) {
+        loadProfile();
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [navigation]);
 
   if (loading) {

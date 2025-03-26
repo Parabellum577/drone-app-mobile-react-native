@@ -7,6 +7,7 @@ interface RegisterData {
   username: string;
   email: string;
   password: string;
+  location: string;
 }
 
 interface LoginData {
@@ -18,6 +19,16 @@ interface AuthResponse {
   access_token: string;
   user: User;
 }
+
+const checkEmail = async (email: string): Promise<boolean> => {
+  const { data } = await api.get(`/auth/check-email?email=${email}`);
+  return data.available;
+};
+
+const checkUsername = async (username: string): Promise<boolean> => {
+  const { data } = await api.get(`/auth/check-username?username=${username}`);
+  return data.available;
+};
 
 export const authService = {
   register: async (userData: RegisterData) => {
@@ -46,7 +57,10 @@ export const authService = {
 
   logout: async () => {
     await AsyncStorage.removeItem('token');
-  }
+  },
+
+  checkEmail,
+  checkUsername,
 };
 
 export default authService; 

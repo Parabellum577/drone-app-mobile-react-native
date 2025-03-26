@@ -47,34 +47,11 @@ const TabItem: React.FC<TabItemProps> = ({ title, icon, isActive, onPress }) => 
 
 const HomeScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  const handleSearch = () => {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      // TODO: Implement search logic per tab
-    }, 500);
-
-    setSearchTimeout(timeout);
-  };
-
-  useEffect(() => {
-    handleSearch();
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchQuery]);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'users':
-        return <UsersTab searchQuery={searchQuery} />;
+        return <UsersTab />;
       case 'marketplace':
         return <MarketplaceTab />;
       case 'services':
@@ -85,22 +62,6 @@ const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      <View style={styles.header}>
-        <View style={styles.searchContainer}>
-          <TouchableOpacity style={styles.searchButton}>
-            <Icon name="magnify" size={24} color={COLORS.textSecondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor={COLORS.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <View style={styles.tabs}>
         <TabItem
           title="Users"

@@ -14,7 +14,14 @@ const TabNavigator = () => {
         tabBarShowLabel: true,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
+        lazy: true,
+        tabBarStyle: {
+          borderTopColor: COLORS.border,
+        },
+        freezeOnBlur: true,
+        unmountOnBlur: true,
       }}
+      backBehavior="initialRoute"
     >
       <Tab.Screen
         name="Home"

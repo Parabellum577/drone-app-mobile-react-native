@@ -1,58 +1,58 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
   ScrollView,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types/navigation';
-import { COLORS, SPACING } from '../constants/theme';
-import authService from '../services/auth.service';
-import { AuthContext } from '../contexts/AuthContext';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../types/navigation";
+import { COLORS, SPACING } from "../constants/theme";
+import authService from "../services/auth.service";
+import { AuthContext } from "../contexts/AuthContext";
+import { StepOneForm, type StepOneData } from "../components/auth/StepOneForm";
+import { StepTwoForm, type StepTwoData } from "../components/auth/StepTwoForm";
 
 type NavigationType = NativeStackNavigationProp<RootStackParamList>;
 
 const RegistrationScreen: React.FC = () => {
   const navigation = useNavigation<NavigationType>();
   const { checkAuth } = useContext(AuthContext);
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [stepOneData, setStepOneData] = useState<StepOneData | null>(null);
 
-  const handleRegister = async () => {
-    if (!name || !username || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  const handleNextStep = (data: StepOneData) => {
+    setStepOneData(data);
+    setStep(2);
+  };
+
+  const handleBack = () => {
+    setStep(1);
+  };
+
+  const handleSubmit = async (data: StepTwoData) => {
+    if (!stepOneData) return;
 
     try {
       setLoading(true);
-      console.log('Attempting registration with:', { email, username });
-      const response = await authService.register({
-        name,
-        username,
-        email,
-        password,
+      await authService.register({
+        name: data.fullName,
+        username: data.username,
+        email: stepOneData.email,
+        password: stepOneData.password,
+        location: data.location,
       });
-      console.log('Registration response:', response);
       await checkAuth();
     } catch (error: any) {
-      console.error('Registration error details:', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        error: error?.message
-      });
-      
-      const errorMessage = error?.response?.data?.message || 'Failed to create account. Please try again.';
-      Alert.alert('Error', errorMessage);
+      if (error?.response?.data?.field === "email") {
+        setStep(1);
+      }
+      if (error?.response?.data?.field === "username") {
+        // Handle username error
+      }
     } finally {
       setLoading(false);
     }
@@ -62,58 +62,22 @@ const RegistrationScreen: React.FC = () => {
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
         <Text style={styles.title}>Sign Up</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={setName}
-        />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.buttonText}>Sign Up</Text>
-          )}
-        </TouchableOpacity>
-        
+        {step === 1 ? (
+          <StepOneForm onSubmit={handleNextStep} />
+        ) : (
+          <StepTwoForm 
+            onSubmit={handleSubmit}
+            onBack={handleBack}
+            loading={loading}
+          />
+        )}
+
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => navigation.navigate("Login")}
         >
-          <Text style={styles.loginText}>
-            Already have an account? Sign In
-          </Text>
+          <Text style={styles.loginText}>Already have an account? Sign In</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -127,38 +91,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: SPACING.lg,
-    justifyContent: 'center',
-    backgroundColor: 'white',
+    justifyContent: "center",
+    backgroundColor: "white",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: SPACING.xl,
-    textAlign: 'center',
+    textAlign: "center",
     color: COLORS.text,
   },
-  input: {
-    backgroundColor: COLORS.background,
-    padding: SPACING.md,
-    borderRadius: 8,
-    marginBottom: SPACING.md,
+  stepText: {
     fontSize: 16,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: SPACING.md,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: SPACING.md,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    color: COLORS.textSecondary,
+    textAlign: "center",
   },
   loginButton: {
     marginTop: SPACING.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loginText: {
     color: COLORS.primary,
@@ -166,4 +116,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RegistrationScreen; 
+export default RegistrationScreen;

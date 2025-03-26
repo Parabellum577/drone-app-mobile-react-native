@@ -36,8 +36,7 @@ const UserCard: React.FC<Props> = ({ user }) => {
 
   const handlePress = () => {
     navigation.navigate('UserProfile', {
-      userId: user.id,
-      name: user.fullName || user.username,
+      userId: user.id
     });
   };
 
