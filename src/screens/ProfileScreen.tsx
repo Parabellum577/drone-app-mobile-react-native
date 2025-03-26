@@ -65,21 +65,76 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const mockVideos: Video[] = [];
-  const mockServices: Service[] = [];
-  const mockProducts: Product[] = [];
+  const mockVideos: Video[] = [
+    { 
+      id: '1', 
+      title: 'Drone Flight', 
+      thumbnail: 'https://picsum.photos/300/200',
+      duration: '2:30',
+      views: 1200,
+      likes: 45,
+      comments: 12
+    },
+    { 
+      id: '2', 
+      title: 'City View', 
+      thumbnail: 'https://picsum.photos/300/200',
+      duration: '3:45',
+      views: 850,
+      likes: 32,
+      comments: 8
+    }
+  ];
+
+  const mockServices: Service[] = [
+    { 
+      id: '1', 
+      title: 'Aerial Photography', 
+      price: '$100',
+      description: 'Professional drone photography',
+      image: 'https://picsum.photos/300/200',
+      rating: 4.5
+    },
+    { 
+      id: '2', 
+      title: 'Drone Training', 
+      price: '$150',
+      description: 'Learn to fly drones',
+      image: 'https://picsum.photos/300/200',
+      rating: 4.5
+    }
+  ];
+
+  const mockProducts: Product[] = [
+    { 
+      id: '1', 
+      title: 'DJI Mini 2', 
+      price: '$449',
+      description: 'Lightweight drone',
+      image: 'https://picsum.photos/300/200',
+      category: 'Drone',
+    },
+    { 
+      id: '2', 
+      title: 'Landing Pad', 
+      price: '$29',
+      description: 'Safe landing pad',
+      image: 'https://picsum.photos/300/200',
+      category: 'Drone',
+    }
+  ];
 
   const handleLogout = async () => {
     Alert.alert(
-      "Выход",
-      "Вы уверены, что хотите выйти?",
+      "Logout",
+      "Are you sure you want to logout?",
       [
         {
-          text: "Отмена",
+          text: "Cancel",
           style: "cancel"
         },
         {
-          text: "Выйти",
+          text: "Logout",
           style: "destructive",
           onPress: async () => {
             try {
@@ -96,7 +151,12 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   useEffect(() => {
     fetchUserProfile();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchUserProfile();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   if (loading) {
     return (
@@ -109,12 +169,12 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   if (!user) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Не удалось загрузить профиль</Text>
+        <Text style={styles.errorText}>Failed to load profile</Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={fetchUserProfile}
         >
-          <Text style={styles.retryText}>Повторить</Text>
+          <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -133,18 +193,14 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         return (
           <ServicesTab
             services={mockServices}
-            onServicePress={(service) =>
-              console.log("Service pressed:", service)
-            }
+            onServicePress={(service) => console.log("Service pressed:", service)}
           />
         );
       case "products":
         return (
           <ProductsTab
             products={mockProducts}
-            onProductPress={(product) =>
-              console.log("Product pressed:", product)
-            }
+            onProductPress={(product) => console.log("Product pressed:", product)}
           />
         );
     }
@@ -159,7 +215,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.profileImage}
           />
           <TouchableOpacity style={styles.editButton}>
-            <Text>Изменить</Text>
+            <Text>Edit</Text>
           </TouchableOpacity>
         </View>
 
@@ -176,11 +232,11 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.stats}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{user.followersCount}</Text>
-              <Text style={styles.statLabel}>Подписчики</Text>
+              <Text style={styles.statLabel}>Followers</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{user.followingCount}</Text>
-              <Text style={styles.statLabel}>Подписки</Text>
+              <Text style={styles.statLabel}>Following</Text>
             </View>
           </View>
 
@@ -189,7 +245,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleLogout}
           >
             <Icon name="logout" size={20} color={COLORS.error} />
-            <Text style={styles.logoutText}>Выйти</Text>
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -205,7 +261,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               activeTab === "videos" && styles.activeTabText,
             ]}
           >
-            Видео
+            Videos
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -218,7 +274,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               activeTab === "services" && styles.activeTabText,
             ]}
           >
-            Услуги
+            Services
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -231,7 +287,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               activeTab === "products" && styles.activeTabText,
             ]}
           >
-            Товары
+            Products
           </Text>
         </TouchableOpacity>
       </View>
@@ -314,18 +370,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
   },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: SPACING.sm,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
-    gap: SPACING.xs,
-  },
-  logoutText: {
-    color: COLORS.error,
-    fontWeight: "600",
-  },
   tabs: {
     flexDirection: "row",
     backgroundColor: "white",
@@ -364,6 +408,18 @@ const styles = StyleSheet.create({
   retryText: {
     color: "white",
     fontWeight: "600",
+  },
+  logoutButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoutText: {
+    color: COLORS.error,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: SPACING.sm,
   },
 });
 

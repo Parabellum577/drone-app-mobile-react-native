@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -15,12 +16,17 @@ import type { RootStackParamList } from '../../types/navigation';
 import { COLORS, SPACING } from '../../constants/theme';
 import userService, { User } from '../../services/user.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserCard from './UserCard';
 
 type NavigationType = NavigationProp<RootStackParamList>;
 
+type Props = {
+  searchQuery: string;
+};
+
 const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?background=random&size=200&length=2&bold=true&format=png&color=ffffff';
 
-const UsersTab: React.FC = () => {
+const UsersTab: React.FC<Props> = ({ searchQuery }) => {
   const navigation = useNavigation<NavigationType>();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +63,10 @@ const UsersTab: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setError(null);
-      const data = await userService.getUsers();
+      setLoading(true);
+      const data = await userService.getUsers(
+        searchQuery ? { searchParam: searchQuery } : undefined
+      );
       setUsers(data);
     } catch (err: any) {
       console.error('Error fetching users:', err);
@@ -79,41 +88,9 @@ const UsersTab: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [searchQuery]);
 
-  const handleUserPress = (user: User) => {
-    navigation.navigate('UserProfile', {
-      userId: user.id,
-      name: user.fullName || user.username,
-    });
-  };
-
-  const renderUserItem = ({ item }: { item: User }) => (
-    <TouchableOpacity
-      style={styles.userCard}
-      onPress={() => handleUserPress(item)}
-    >
-      <Image
-        source={{ uri: getAvatarUrl(item) }}
-        style={styles.avatar}
-      />
-      <View style={styles.userInfo}>
-        <Text style={styles.name}>{item.fullName || item.username}</Text>
-        <Text style={styles.username}>@{item.username}</Text>
-        {item.bio && (
-          <Text 
-            style={styles.bio} 
-            numberOfLines={1} 
-            ellipsizeMode="tail"
-          >
-            {item.bio}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-
-  if (loading) {
+  if (loading && !users.length) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -121,83 +98,68 @@ const UsersTab: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !users.length) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={fetchUsers}
+          onPress={() => fetchUsers()}
         >
-          <Text style={styles.retryText}>Повторить</Text>
+          <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={users}
-      renderItem={renderUserItem}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[COLORS.primary]}
-        />
-      }
-    />
+    <View style={styles.container}>
+      <FlatList
+        data={users}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <UserCard user={item} />}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyText}>No users found</Text>
+          </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+          />
+        }
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: SPACING.md,
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  userCard: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 12,
+  searchContainer: {
     padding: SPACING.md,
-    marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: SPACING.sm,
+    backgroundColor: 'white',
   },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  userInfo: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  name: {
+  searchInput: {
+    backgroundColor: COLORS.background,
+    padding: SPACING.sm,
+    borderRadius: 8,
     fontSize: 16,
-    fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 2,
   },
-  username: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  bio: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
+  list: {
+    padding: SPACING.md,
   },
   errorText: {
     color: COLORS.error,
@@ -212,6 +174,10 @@ const styles = StyleSheet.create({
   retryText: {
     color: 'white',
     fontWeight: '600',
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
   },
 });
 

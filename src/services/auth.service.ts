@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './apiClient';
+import type { User } from './user.service';
 
 interface RegisterData {
   name: string;
@@ -15,15 +16,7 @@ interface LoginData {
 
 interface AuthResponse {
   access_token: string;
-  user: {
-    _id: string;
-    name: string;
-    username: string;
-    email: string;
-    followers: number;
-    following: number;
-    createdAt: string;
-  }
+  user: User;
 }
 
 export const authService = {
@@ -42,12 +35,12 @@ export const authService = {
   },
 
   getProfile: async () => {
-    const response = await api.get<AuthResponse['user']>('/auth/profile');
+    const response = await api.get<User>('/auth/profile');
     return response.data;
   },
 
   updateProfile: async (data: { bio?: string; location?: string; avatar?: string }) => {
-    const response = await api.put<AuthResponse['user']>('/auth/profile', data);
+    const response = await api.put<User>('/auth/profile', data);
     return response.data;
   },
 

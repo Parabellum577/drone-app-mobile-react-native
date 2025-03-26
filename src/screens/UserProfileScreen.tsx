@@ -28,6 +28,7 @@ const UserProfileScreen: React.FC<Props> = ({ route, navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({
@@ -82,6 +83,7 @@ const UserProfileScreen: React.FC<Props> = ({ route, navigation }) => {
       ]);
       setUser(userData);
       setCurrentUser(currentUserData);
+      setIsFollowing(currentUserData.following.includes(userData.id));
     } catch (err: any) {
       console.error('Error fetching user profile:', err);
       if (err?.response?.status === 401) {
@@ -96,25 +98,19 @@ const UserProfileScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const handleFollow = async () => {
-    if (!user || followLoading) return;
-
+    setFollowLoading(true);
     try {
-      setFollowLoading(true);
       const response = await userService.followUser(userId);
-      setUser(prevUser => ({
-        ...prevUser!,
-        ...response.user
-      }));
-      setCurrentUser(prevUser => ({
-        ...prevUser!,
-        ...response.follower
-      }));
-    } catch (err: any) {
-      console.error('Error following user:', err);
-      if (err?.response?.status === 401) {
-        handleAuthError();
-        return;
-      }
+      setUser(prev => prev ? {
+        ...prev,
+        followersCount: response.followersCount,
+      } : null);
+      setCurrentUser(prev => prev ? {
+        ...prev,
+        followingCount: response.followingCount,
+      } : null);
+      setIsFollowing(response.isFollowing);
+    } catch (error) {
       Alert.alert('Error', 'Failed to follow user. Please try again.');
     } finally {
       setFollowLoading(false);
@@ -122,25 +118,19 @@ const UserProfileScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const handleUnfollow = async () => {
-    if (!user || followLoading) return;
-
+    setFollowLoading(true);
     try {
-      setFollowLoading(true);
       const response = await userService.unfollowUser(userId);
-      setUser(prevUser => ({
-        ...prevUser!,
-        ...response.user
-      }));
-      setCurrentUser(prevUser => ({
-        ...prevUser!,
-        ...response.follower
-      }));
-    } catch (err: any) {
-      console.error('Error unfollowing user:', err);
-      if (err?.response?.status === 401) {
-        handleAuthError();
-        return;
-      }
+      setUser(prev => prev ? {
+        ...prev,
+        followersCount: response.followersCount,
+      } : null);
+      setCurrentUser(prev => prev ? {
+        ...prev,
+        followingCount: response.followingCount,
+      } : null);
+      setIsFollowing(response.isFollowing);
+    } catch (error) {
       Alert.alert('Error', 'Failed to unfollow user. Please try again.');
     } finally {
       setFollowLoading(false);
@@ -179,7 +169,6 @@ const UserProfileScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   const isOwnProfile = currentUser?.id === user.id;
-  const isFollowing = currentUser?.following?.includes(user.id) || false;
 
   return (
     <ScrollView

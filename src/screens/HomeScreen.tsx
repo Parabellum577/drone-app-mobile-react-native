@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  TextInput,
 } from 'react-native';
 import { COLORS, SPACING } from '../constants/theme';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -46,11 +47,34 @@ const TabItem: React.FC<TabItemProps> = ({ title, icon, isActive, onPress }) => 
 
 const HomeScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const handleSearch = () => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      // TODO: Implement search logic per tab
+    }, 500);
+
+    setSearchTimeout(timeout);
+  };
+
+  useEffect(() => {
+    handleSearch();
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchQuery]);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'users':
-        return <UsersTab />;
+        return <UsersTab searchQuery={searchQuery} />;
       case 'marketplace':
         return <MarketplaceTab />;
       case 'services':
@@ -66,7 +90,13 @@ const HomeScreen: React.FC = () => {
         <View style={styles.searchContainer}>
           <TouchableOpacity style={styles.searchButton}>
             <Icon name="magnify" size={24} color={COLORS.textSecondary} />
-            <Text style={styles.searchText}>Search</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={COLORS.textSecondary}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -123,7 +153,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: SPACING.xs,
   },
-  searchText: {
+  searchInput: {
+    flex: 1,
     color: COLORS.textSecondary,
     fontSize: 16,
   },

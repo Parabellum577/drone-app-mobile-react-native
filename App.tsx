@@ -50,7 +50,7 @@ const App = () => {
                 component={UserProfileScreen}
                 options={{ 
                   headerShown: true,
-                  headerBackTitle: "Назад"
+                  headerBackTitle: "Back"
                 }} 
               />
             </>

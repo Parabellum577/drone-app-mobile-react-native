@@ -28,12 +28,14 @@ export interface Service {
   description: string;
   price: string;
   rating: number;
+  image: string;
 }
 
 export interface Product {
   id: string;
-  name: string;
   price: string;
   image: string;
   category: string;
+  title: string;
+  description: string;
 } 

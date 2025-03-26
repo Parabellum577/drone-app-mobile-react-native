@@ -22,13 +22,29 @@ export interface UserUpdateData {
 }
 
 interface FollowResponse {
-  user: User;
-  follower: User;
+  userId: string;
+  followerId: string;
+  isFollowing: boolean;
+  followersCount: number;
+  followingCount: number;
+}
+
+interface GetUsersParams {
+  searchParam?: string;
+  location?: string;
 }
 
 export const userService = {
-  getUsers: async () => {
-    const response = await api.get<User[]>('/users');
+  getUsers: async (params?: GetUsersParams) => {
+    const queryParams = new URLSearchParams();
+    if (params?.searchParam) {
+      queryParams.append('searchParam', params.searchParam);
+    }
+    if (params?.location) {
+      queryParams.append('location', params.location);
+    }
+    const query = queryParams.toString();
+    const response = await api.get<User[]>(`/users${query ? `?${query}` : ''}`);
     return response.data;
   },
   
