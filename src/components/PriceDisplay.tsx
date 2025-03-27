@@ -10,7 +10,7 @@ type Props = {
 
 export const PriceDisplay: React.FC<Props> = ({ price, currency, style }) => {
   if (price === 0) {
-    return <Text style={[styles.price, style]}>Free</Text>;
+    return <Text style={[styles.price, styles.freePrice, style]}>Free</Text>;
   }
   
   return <Text style={[styles.price, style]}>{price} {currency}</Text>;
@@ -21,5 +21,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FF5252',
     fontWeight: '600',
+    textAlign: 'right',
+  },
+  freePrice: {
+    paddingRight: 0,
   }
 }); 

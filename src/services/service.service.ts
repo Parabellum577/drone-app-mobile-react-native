@@ -113,16 +113,10 @@ const serviceService = {
 
   // Get services by user ID
   getUserServices: async (userId: string) => {
-    console.log('Запрос сервисов для пользователя:', userId);
     try {
       const response = await api.get<Paginated<Service> | Service[]>(`/services/user/${userId}`);
-      console.log('Ответ API getUserServices:', response.status);
-      console.log('Заголовки ответа:', response.headers);
-      console.log('Данные ответа:', response.data);
       
-      // Обработка разных форматов ответа
       if (Array.isArray(response.data)) {
-        console.log('Обнаружен массив в ответе');
         return {
           items: response.data,
           total: response.data.length,
@@ -130,11 +124,8 @@ const serviceService = {
           offset: 0
         };
       }
-      
       return response.data;
     } catch (error) {
-      console.error('Ошибка при загрузке сервисов пользователя:', error);
-      // Возвращаем пустую пагинацию при ошибке, вместо выбрасывания исключения
       return {
         items: [],
         total: 0,
