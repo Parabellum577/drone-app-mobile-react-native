@@ -20,11 +20,13 @@ type NavigationType = NavigationProp<RootStackParamList>;
 
 interface ServicesTabProps {
   userId: string;
+  isOwnProfile: boolean;
   onServicePress: (service: Service) => void;
 }
 
 const ServicesTab: React.FC<ServicesTabProps> = ({
   userId,
+  isOwnProfile,
   onServicePress,
 }) => {
   const navigation = useNavigation<NavigationType>();
@@ -85,9 +87,12 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
           </View>
         }
       />
-      <TouchableOpacity style={styles.fab} onPress={handleCreateService}>
-        <Icon name="plus" size={24} color="white" />
-      </TouchableOpacity>
+      
+      {isOwnProfile && (
+        <TouchableOpacity style={styles.fab} onPress={handleCreateService}>
+          <Icon name="plus" size={24} color="white" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

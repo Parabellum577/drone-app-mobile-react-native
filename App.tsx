@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, ActivityIndicator } from 'react-native';
-import { AuthContext } from './src/contexts/AuthContext';
-import { LoginScreen, RegistrationScreen, UserProfileScreen, CreateServiceScreen } from './src/screens';
-import TabNavigator from './src/navigation/TabNavigator';
-import type { RootStackParamList } from './src/types/navigation';
-import { COLORS } from './src/constants/theme';
-import 'react-native-get-random-values';
+import React, { useState, useEffect } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import "react-native-get-random-values";
+import { View, ActivityIndicator } from "react-native";
+import { AuthContext } from "./src/contexts/AuthContext";
+import {
+  LoginScreen,
+  RegistrationScreen,
+  UserProfileScreen,
+  CreateServiceScreen,
+} from "./src/screens";
+import TabNavigator from "./src/navigation/TabNavigator";
+import type { RootStackParamList } from "./src/types/navigation";
+import { COLORS } from "./src/constants/theme";
+import ProfileMenu from "./src/components/profile/ProfileMenu";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const LoadingScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
     <ActivityIndicator size="large" color={COLORS.primary} />
   </View>
 );
@@ -25,10 +31,10 @@ const App = () => {
   const checkAuth = async () => {
     try {
       setIsLoading(true);
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem("token");
       setIsAuthenticated(!!token);
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error("Error checking auth:", error);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -49,37 +55,49 @@ const App = () => {
         <Stack.Navigator>
           {!isAuthenticated ? (
             <>
-              <Stack.Screen 
-                name="Login" 
+              <Stack.Screen
+                name="Login"
                 component={LoginScreen}
                 options={{ headerShown: false }}
               />
-              <Stack.Screen 
-                name="Registration" 
+              <Stack.Screen
+                name="Registration"
                 component={RegistrationScreen}
                 options={{ headerShown: false }}
               />
             </>
           ) : (
             <>
-              <Stack.Screen 
-                name="Main" 
+              <Stack.Screen
+                name="Main"
                 component={TabNavigator}
                 options={{ headerShown: false }}
               />
-              <Stack.Screen 
-                name="UserProfile" 
+              <Stack.Screen
+                name="UserProfile"
                 component={UserProfileScreen}
-                options={{ 
-                  headerBackTitle: "Back"
-                }}
+                options={({ route }) => ({
+                  title: route.params?.username || "Profile",
+                  headerRight: () => (
+                    <ProfileMenu
+                      onLogout={async () => {
+                        try {
+                          await AsyncStorage.removeItem("token");
+                          await checkAuth();
+                        } catch (error) {
+                          console.error("Error during logout:", error);
+                        }
+                      }}
+                    />
+                  ),
+                })}
               />
-              <Stack.Screen 
-                name="CreateService" 
+              <Stack.Screen
+                name="CreateService"
                 component={CreateServiceScreen}
-                options={{ 
+                options={{
                   title: "Create Service",
-                  headerBackTitle: "Back"
+                  headerBackTitle: "Back",
                 }}
               />
             </>
@@ -90,4 +108,4 @@ const App = () => {
   );
 };
 
-export default App; 
+export default App;

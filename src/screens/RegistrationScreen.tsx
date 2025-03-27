@@ -47,11 +47,9 @@ const RegistrationScreen: React.FC = () => {
       });
       await checkAuth();
     } catch (error: any) {
-      if (error?.response?.data?.field === "email") {
+      if (error?.response?.data) {
+        console.log("🚀 ~ handleSubmit ~ data:", data);
         setStep(1);
-      }
-      if (error?.response?.data?.field === "username") {
-        // Handle username error
       }
     } finally {
       setLoading(false);
@@ -66,7 +64,7 @@ const RegistrationScreen: React.FC = () => {
         {step === 1 ? (
           <StepOneForm onSubmit={handleNextStep} />
         ) : (
-          <StepTwoForm 
+          <StepTwoForm
             onSubmit={handleSubmit}
             onBack={handleBack}
             loading={loading}

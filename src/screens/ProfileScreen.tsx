@@ -18,7 +18,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import type { Video } from "../types/profile";
-import type { Service } from "../types/profile";
 import type { Product } from "../types/profile";
 
 type Props = TabScreenProps<"Profile">;
@@ -204,6 +203,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         return (
           <ServicesTab
             userId={user.id}
+            isOwnProfile={true}
             onServicePress={(service) =>
               console.log("Service pressed:", service)
             }
@@ -229,19 +229,19 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             source={{ uri: getAvatarUrl(user) }}
             style={styles.profileImage}
           />
-          <TouchableOpacity style={styles.editButton}>
-            <Text>Edit</Text>
+          <TouchableOpacity style={styles.changeAvatarButton}>
+            <Icon name="plus" size={24} color="white" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.userInfo}>
-          <Text style={styles.name}>{user.fullName || user.username}</Text>
-          <Text style={styles.username}>@{user.username}</Text>
+          <Text style={styles.name}>{user.fullName}</Text>
           {user.location && (
-            <Text style={styles.location}>{user.location}</Text>
+            <View style={styles.locationContainer}>
+              <Icon name="map-marker" size={16} color={COLORS.textSecondary} style={{marginRight: SPACING.xs}}/>
+              <Text style={styles.location}>{user.location}</Text>
+            </View>
           )}
-          {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
-
           <View style={styles.stats}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{user.followersCount}</Text>
@@ -252,11 +252,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.statLabel}>Following</Text>
             </View>
           </View>
-
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Icon name="logout" size={20} color={COLORS.error} />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+          {<Text style={styles.bio}>{user.bio ? user.bio : "No bio yet"}</Text>}
         </View>
       </View>
 
@@ -318,24 +314,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: {
-    padding: SPACING.lg,
+    padding: SPACING.md,
     backgroundColor: "white",
   },
   profileImageContainer: {
     alignItems: "center",
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.xs,
+    position: "relative",
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: SPACING.sm,
   },
-  editButton: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    backgroundColor: COLORS.background,
-    borderRadius: 20,
+  changeAvatarButton: {
+    position: "absolute",
+    bottom: 0,
+    right: "35%",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
   },
   userInfo: {
     alignItems: "center",
@@ -354,13 +368,11 @@ const styles = StyleSheet.create({
   location: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
   },
   bio: {
     fontSize: 14,
     color: COLORS.text,
     textAlign: "center",
-    marginBottom: SPACING.md,
   },
   stats: {
     flexDirection: "row",

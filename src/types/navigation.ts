@@ -13,6 +13,7 @@ export type RootStackParamList = {
   };
   UserProfile: {
     userId: string;
+    username: string;
   };
   CreateService: undefined;
   Chat: {
