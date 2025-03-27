@@ -1,3 +1,5 @@
+import { Currency } from './service';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -24,11 +26,16 @@ export interface Video {
 
 export interface Service {
   id: string;
+  serviceId: string;
   title: string;
   description: string;
-  price: string;
-  rating: number;
+  price: number;
+  currency: Currency;
   image: string;
+  created_by: string;
+  createdAt: string;
+  updatedAt: string;
+  location: string;
 }
 
 export interface Product {

@@ -32,8 +32,8 @@ const ServicesTab: React.FC = () => {
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState({
     location: '',
-    minPrice: '',
-    maxPrice: '',
+    minPrice: 0,
+    maxPrice: 0,
   });
 
   const fetchServices = async () => {
@@ -65,11 +65,11 @@ const ServicesTab: React.FC = () => {
     navigation.navigate('CreateService');
   };
 
-  const handleApplyFilters = (newFilters: { location?: string; minPrice?: string; maxPrice?: string }) => {
+  const handleApplyFilters = (newFilters: { location?: string; minPrice?: number; maxPrice?: number }) => {
     setFilters({
       location: newFilters.location || '',
-      minPrice: newFilters.minPrice || '',
-      maxPrice: newFilters.maxPrice || '',
+      minPrice: newFilters.minPrice || 0,
+      maxPrice: newFilters.maxPrice || 0,
     });
     setFiltersVisible(false);
     fetchServices();

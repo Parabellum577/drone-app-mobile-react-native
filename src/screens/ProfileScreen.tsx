@@ -16,7 +16,7 @@ import ProductsTab from "../components/profile/ProductsTab";
 import userService, { User } from "../services/user.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../contexts/AuthContext";
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import type { Video } from "../types/profile";
 import type { Service } from "../types/profile";
 import type { Product } from "../types/profile";
@@ -24,7 +24,8 @@ import type { Product } from "../types/profile";
 type Props = TabScreenProps<"Profile">;
 type TabType = "videos" | "services" | "products";
 
-const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?background=random&size=200&length=2&bold=true&format=png&color=ffffff';
+const DEFAULT_AVATAR =
+  "https://ui-avatars.com/api/?background=random&size=200&length=2&bold=true&format=png&color=ffffff";
 
 const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<TabType>("videos");
@@ -34,20 +35,24 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const getAvatarUrl = (user: User) => {
     if (user.avatar) return user.avatar;
-    
+
     let initials;
     try {
-      initials = (user.fullName || user.username).trim().split(/\s+/).map(n => n[0] || '').join('');
+      initials = (user.fullName || user.username)
+        .trim()
+        .split(/\s+/)
+        .map((n) => n[0] || "")
+        .join("");
       if (!initials) {
         initials = user.username.slice(0, 2).toUpperCase();
       }
       if (!initials) {
-        initials = 'US';
+        initials = "US";
       }
     } catch (e) {
-      initials = 'US';
+      initials = "US";
     }
-    
+
     return `${DEFAULT_AVATAR}&name=${encodeURIComponent(initials)}`;
   };
 
@@ -56,7 +61,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       const data = await userService.getCurrentUserProfile();
       setUser(data);
     } catch (err: any) {
-      console.error('Error fetching profile:', err);
+      console.error("Error fetching profile:", err);
       if (err?.response?.status === 401) {
         Alert.alert(
           "Session Expired",
@@ -64,8 +69,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           [
             {
               text: "OK",
-              onPress: handleLogout
-            }
+              onPress: handleLogout,
+            },
           ]
         );
       }
@@ -75,87 +80,64 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const mockVideos: Video[] = [
-    { 
-      id: '1', 
-      title: 'Drone Flight', 
-      thumbnail: 'https://picsum.photos/300/200',
-      duration: '2:30',
+    {
+      id: "1",
+      title: "Drone Flight",
+      thumbnail: "https://picsum.photos/300/200",
+      duration: "2:30",
       views: 1200,
       likes: 45,
-      comments: 12
+      comments: 12,
     },
-    { 
-      id: '2', 
-      title: 'City View', 
-      thumbnail: 'https://picsum.photos/300/200',
-      duration: '3:45',
+    {
+      id: "2",
+      title: "City View",
+      thumbnail: "https://picsum.photos/300/200",
+      duration: "3:45",
       views: 850,
       likes: 32,
-      comments: 8
-    }
-  ];
-
-  const mockServices: Service[] = [
-    { 
-      id: '1', 
-      title: 'Aerial Photography', 
-      price: '$100',
-      description: 'Professional drone photography',
-      image: 'https://picsum.photos/300/200',
-      rating: 4.5
+      comments: 8,
     },
-    { 
-      id: '2', 
-      title: 'Drone Training', 
-      price: '$150',
-      description: 'Learn to fly drones',
-      image: 'https://picsum.photos/300/200',
-      rating: 4.5
-    }
   ];
 
   const mockProducts: Product[] = [
-    { 
-      id: '1', 
-      title: 'DJI Mini 2', 
-      price: '$449',
-      description: 'Lightweight drone',
-      image: 'https://picsum.photos/300/200',
-      category: 'Drone',
+    {
+      id: "1",
+      title: "DJI Mini 2",
+      price: "$449",
+      description: "Lightweight drone",
+      image: "https://picsum.photos/300/200",
+      category: "Drone",
     },
-    { 
-      id: '2', 
-      title: 'Landing Pad', 
-      price: '$29',
-      description: 'Safe landing pad',
-      image: 'https://picsum.photos/300/200',
-      category: 'Drone',
-    }
+    {
+      id: "2",
+      title: "Landing Pad",
+      price: "$29",
+      description: "Safe landing pad",
+      image: "https://picsum.photos/300/200",
+      category: "Drone",
+    },
   ];
 
   const handleLogout = async () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('token');
-              await checkAuth();
-            } catch (error) {
-              console.error('Error during logout:', error);
-            }
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await AsyncStorage.removeItem("token");
+            await checkAuth();
+          } catch (error) {
+            console.error("Error during logout:", error);
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   useEffect(() => {
@@ -168,7 +150,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           setUser(data);
         }
       } catch (err) {
-        console.error('Error loading profile:', err);
+        console.error("Error loading profile:", err);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -178,7 +160,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
     loadProfile();
 
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = navigation.addListener("focus", () => {
       if (isMounted) {
         loadProfile();
       }
@@ -202,10 +184,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Failed to load profile</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={fetchUserProfile}
-        >
+        <TouchableOpacity style={styles.retryButton} onPress={fetchUserProfile}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -224,15 +203,19 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       case "services":
         return (
           <ServicesTab
-            services={mockServices}
-            onServicePress={(service) => console.log("Service pressed:", service)}
+            userId={user.id}
+            onServicePress={(service) =>
+              console.log("Service pressed:", service)
+            }
           />
         );
       case "products":
         return (
           <ProductsTab
             products={mockProducts}
-            onProductPress={(product) => console.log("Product pressed:", product)}
+            onProductPress={(product) =>
+              console.log("Product pressed:", product)
+            }
           />
         );
     }
@@ -257,9 +240,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           {user.location && (
             <Text style={styles.location}>{user.location}</Text>
           )}
-          {user.bio && (
-            <Text style={styles.bio}>{user.bio}</Text>
-          )}
+          {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
 
           <View style={styles.stats}>
             <View style={styles.statItem}>
@@ -272,10 +253,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Icon name="logout" size={20} color={COLORS.error} />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>

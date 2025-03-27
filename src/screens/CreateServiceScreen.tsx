@@ -50,7 +50,7 @@ const CreateServiceScreen: React.FC = () => {
       setLoading(true);
       const newService = await serviceService.createService({
         ...form,
-        price: isFree ? '0' : form.price,
+        price: isFree ? 0 : parseFloat(form.price),
       });
       
       navigation.navigate('Main', {
