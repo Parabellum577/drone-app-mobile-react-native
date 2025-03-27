@@ -16,9 +16,12 @@ export interface User {
 }
 
 export interface UserUpdateData {
-  fullName?: string;
+  email?: string;
   username?: string;
+  fullName?: string;
   avatar?: string;
+  bio?: string;
+  location?: string;
 }
 
 interface FollowResponse {

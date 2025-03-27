@@ -26,7 +26,7 @@ type TabType = "videos" | "services" | "products";
 const DEFAULT_AVATAR =
   "https://ui-avatars.com/api/?background=random&size=200&length=2&bold=true&format=png&color=ffffff";
 
-const ProfileScreen: React.FC<Props> = ({ navigation }) => {
+const ProfileScreen: React.FC<Props> = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState<TabType>("videos");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,10 +55,17 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     return `${DEFAULT_AVATAR}&name=${encodeURIComponent(initials)}`;
   };
 
+  const updateNavigationHeader = (userData: User) => {
+    navigation.setOptions({
+      title: `@${userData.username}`,
+    });
+  };
+
   const fetchUserProfile = async () => {
     try {
       const data = await userService.getCurrentUserProfile();
       setUser(data);
+      updateNavigationHeader(data);
     } catch (err: any) {
       console.error("Error fetching profile:", err);
       if (err?.response?.status === 401) {
@@ -147,6 +154,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         const data = await userService.getCurrentUserProfile();
         if (isMounted) {
           setUser(data);
+          updateNavigationHeader(data);
         }
       } catch (err) {
         console.error("Error loading profile:", err);
@@ -170,6 +178,12 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       unsubscribe();
     };
   }, [navigation]);
+
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchUserProfile();
+    }
+  }, [route.params?.refresh]);
 
   if (loading) {
     return (

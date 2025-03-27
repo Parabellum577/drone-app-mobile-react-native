@@ -9,24 +9,23 @@ export type RootStackParamList = {
     screen?: string;
     params?: {
       newService?: Service;
+      refresh?: number;
     };
   };
+  CreateService: undefined;
   UserProfile: {
     userId: string;
     username: string;
   };
-  CreateService: undefined;
-  Chat: {
-    userId: string;
-    name: string;
-  };
+  EditProfile: undefined;
   Inbox: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
-  Profile: undefined;
+  Profile: { refresh?: number };
   Inbox: undefined;
+  EditProfile: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
