@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, SPACING } from "../../constants/theme";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { LocationInput } from "../common/LocationInput";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
+import { ServiceCategory } from "../../types/service";
 
 type Props = {
   visible: boolean;
@@ -13,11 +14,13 @@ type Props = {
     location?: string;
     minPrice?: number;
     maxPrice?: number;
+    category?: ServiceCategory;
   }) => void;
   initialFilters: {
     location?: string;
     minPrice?: number;
     maxPrice?: number;
+    category?: ServiceCategory;
   };
 };
 
@@ -35,12 +38,23 @@ const FiltersModal: React.FC<Props> = ({
     initialFilters.minPrice || MIN_PRICE,
     initialFilters.maxPrice || MAX_PRICE,
   ]);
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(
+    initialFilters.category || null
+  );
+
+  const categoryOptions = [
+    { label: 'All', value: null },
+    { label: 'Services', value: ServiceCategory.SERVICE },
+    { label: 'Events', value: ServiceCategory.EVENT },
+    { label: 'Courses', value: ServiceCategory.COURSE },
+  ];
 
   const handleApply = () => {
     onApply({
       location: location || undefined,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],
+      category: selectedCategory || undefined,
     });
     onClose();
   };
@@ -48,6 +62,7 @@ const FiltersModal: React.FC<Props> = ({
   const handleReset = () => {
     setLocation("");
     setPriceRange([MIN_PRICE, MAX_PRICE]);
+    setSelectedCategory(null);
     onApply({});
     onClose();
   };
@@ -69,7 +84,32 @@ const FiltersModal: React.FC<Props> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={styles.filters}>
+            <ScrollView style={styles.filters}>
+              <View style={styles.field}>
+                <Text style={styles.label}>Category</Text>
+                <View style={styles.categoryButtonsContainer}>
+                  {categoryOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.value || 'all'}
+                      style={[
+                        styles.categoryButton,
+                        selectedCategory === option.value && styles.selectedCategoryButton
+                      ]}
+                      onPress={() => setSelectedCategory(option.value)}
+                    >
+                      <Text 
+                        style={[
+                          styles.categoryButtonText,
+                          selectedCategory === option.value && styles.selectedCategoryButtonText
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              
               <View style={styles.field}>
                 <Text style={styles.label}>Price Range</Text>
                 <View style={styles.priceRangeContainer}>
@@ -100,7 +140,7 @@ const FiltersModal: React.FC<Props> = ({
                   placeholder="Enter location"
                 />
               </View>
-            </View>
+            </ScrollView>
 
             <View style={styles.footer}>
               <TouchableOpacity
@@ -133,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    
+    maxHeight: '80%',
   },
   safeArea: {
     paddingTop: SPACING.xl,
@@ -161,6 +201,30 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: COLORS.text,
     marginBottom: SPACING.md,
+  },
+  categoryButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  categoryButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: 'white',
+  },
+  selectedCategoryButton: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryButtonText: {
+    color: COLORS.text,
+    fontWeight: '500',
+  },
+  selectedCategoryButtonText: {
+    color: 'white',
   },
   priceRangeContainer: {
     flexDirection: "row",

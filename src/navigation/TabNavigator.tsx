@@ -1,39 +1,28 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { TouchableOpacity } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useFocusEffect } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, SPACING } from '../constants/theme';
-import { HomeScreen, ProfileScreen, InboxScreen, EditProfileScreen } from '../screens';
-import type { TabParamList } from '../types/navigation';
-import ProfileMenu from '../components/profile/ProfileMenu';
-import { AuthContext } from '../contexts/AuthContext';
-import userService from '../services/user.service';
+import React, { useContext } from "react";
+import { TouchableOpacity } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COLORS, SPACING } from "../constants/theme";
+import {
+  HomeScreen,
+  ProfileScreen,
+  InboxScreen,
+  EditProfileScreen,
+  ServiceDetailsScreen,
+} from "../screens";
+import type { TabParamList } from "../types/navigation";
+import ProfileMenu from "../components/profile/ProfileMenu";
+import { AuthContext } from "../contexts/AuthContext";
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const TabNavigator = () => {
   const { checkAuth } = useContext(AuthContext);
-  const [username, setUsername] = useState<string>('');
-  const [isMenuVisible, setIsMenuVisible] = useState(false);
-
-  const loadUsername = useCallback(async () => {
-    try {
-      const user = await userService.getCurrentUserProfile();
-      setUsername(user.username);
-    } catch (error) {
-      console.error('Error loading username:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadUsername();
-  }, [loadUsername]);
 
   return (
     <Tab.Navigator
-      screenOptions={({ navigation }) => ({
+      screenOptions={() => ({
         tabBarShowLabel: true,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
@@ -73,24 +62,18 @@ const TabNavigator = () => {
             <Icon name="account" size={24} color={color} />
           ),
           headerRight: () => (
-            <ProfileMenu 
-              onClose={() => setIsMenuVisible(false)}
+            <ProfileMenu
+              onClose={() => {}}
               onLogout={async () => {
-                setIsMenuVisible(false);
                 try {
-                  await AsyncStorage.removeItem('token');
+                  await AsyncStorage.removeItem("token");
                   await checkAuth();
                 } catch (error) {
-                  console.error('Error during logout:', error);
+                  console.error("Error during logout:", error);
                 }
               }}
             />
           ),
-        }}
-        listeners={{
-          focus: () => {
-            loadUsername();
-          },
         }}
       />
       <Tab.Screen
@@ -110,8 +93,27 @@ const TabNavigator = () => {
           ),
         })}
       />
+      <Tab.Screen
+        name="ServiceDetails"
+        component={ServiceDetailsScreen}
+        options={({ navigation }) => ({
+          tabBarButton: () => null,
+          headerShown: true,
+          title: "Service Details",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={{ marginLeft: SPACING.md }}
+              onPress={() =>
+                navigation.navigate("Home", { activeTab: "services" })
+              }
+            >
+              <Icon name="arrow-left" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          ),
+        })}
+      />
     </Tab.Navigator>
   );
 };
 
-export default TabNavigator; 
+export default TabNavigator;

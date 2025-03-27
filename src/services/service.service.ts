@@ -1,11 +1,15 @@
 import api from './apiClient';
-import { Currency } from '../types/service';
+import { Currency, ServiceCategory, WorkingHours } from '../types/service';
+import { Paginated } from '../types/common';
 
 export interface ServiceQuery {
   searchTitle?: string;
   location?: string;
   minPrice?: number;
   maxPrice?: number;
+  category?: ServiceCategory;
+  limit?: number;
+  offset?: number;
 }
 
 export interface Service {
@@ -20,6 +24,13 @@ export interface Service {
   createdAt: string;
   updatedAt: string;
   location: string;
+  category: ServiceCategory;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  availableDays?: string[];
+  workingHours?: WorkingHours;
 }
 
 export interface CreateServiceDto {
@@ -29,6 +40,13 @@ export interface CreateServiceDto {
   currency: Currency;
   image: string;
   location: string;
+  category: ServiceCategory;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  availableDays?: string[];
+  workingHours?: WorkingHours;
 }
 
 const serviceService = {
@@ -45,12 +63,35 @@ const serviceService = {
       ...(query?.location && { location: query.location }),
       ...(query?.minPrice && { minPrice: query.minPrice }),
       ...(query?.maxPrice && { maxPrice: query.maxPrice }),
+      ...(query?.category && { category: query.category }),
+      ...(query?.limit && { limit: query.limit }),
+      ...(query?.offset && { offset: query.offset }),
     };
     
-    const response = await api.get<Service[]>('/services', { 
+    const response = await api.get<Paginated<Service>>('/services', { 
       params: Object.keys(params).length > 0 ? params : undefined 
     });
-    return response.data;
+    return response.data.items;
+  },
+
+  // Get total count of services
+  getServicesCount: async (query?: ServiceQuery) => {
+    const params = {
+      ...(query?.searchTitle && { searchTitle: query.searchTitle }),
+      ...(query?.location && { location: query.location }),
+      ...(query?.minPrice && { minPrice: query.minPrice }),
+      ...(query?.maxPrice && { maxPrice: query.maxPrice }),
+      ...(query?.category && { category: query.category }),
+    };
+    
+    const response = await api.get<Paginated<Service>>('/services', { 
+      params: {
+        ...Object.keys(params).length > 0 ? params : undefined,
+        limit: 1,
+        offset: 0
+      }
+    });
+    return response.data.total;
   },
 
   // Get service by ID
@@ -72,8 +113,35 @@ const serviceService = {
 
   // Get services by user ID
   getUserServices: async (userId: string) => {
-    const response = await api.get<Service[]>(`/services/user/${userId}`);
-    return response.data;
+    console.log('Запрос сервисов для пользователя:', userId);
+    try {
+      const response = await api.get<Paginated<Service> | Service[]>(`/services/user/${userId}`);
+      console.log('Ответ API getUserServices:', response.status);
+      console.log('Заголовки ответа:', response.headers);
+      console.log('Данные ответа:', response.data);
+      
+      // Обработка разных форматов ответа
+      if (Array.isArray(response.data)) {
+        console.log('Обнаружен массив в ответе');
+        return {
+          items: response.data,
+          total: response.data.length,
+          limit: response.data.length,
+          offset: 0
+        };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Ошибка при загрузке сервисов пользователя:', error);
+      // Возвращаем пустую пагинацию при ошибке, вместо выбрасывания исключения
+      return {
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 0
+      };
+    }
   },
 };
 

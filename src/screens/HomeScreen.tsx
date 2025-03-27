@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,15 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  TextInput,
-} from 'react-native';
-import { COLORS, SPACING } from '../constants/theme';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import UsersTab from '../components/home/UsersTab';
-import MarketplaceTab from '../components/home/MarketplaceTab';
-import ServicesTab from '../components/home/ServicesTab';
+} from "react-native";
+import { COLORS, SPACING } from "../constants/theme";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import UsersTab from "../components/home/UsersTab";
+import MarketplaceTab from "../components/home/MarketplaceTab";
+import ServicesTab from "../components/home/ServicesTab";
+import { useRoute } from "@react-navigation/native";
 
-type TabType = 'users' | 'marketplace' | 'services';
+type TabType = "users" | "marketplace" | "services";
 
 interface TabItemProps {
   title: string;
@@ -24,7 +24,12 @@ interface TabItemProps {
   onPress: () => void;
 }
 
-const TabItem: React.FC<TabItemProps> = ({ title, icon, isActive, onPress }) => (
+const TabItem: React.FC<TabItemProps> = ({
+  title,
+  icon,
+  isActive,
+  onPress,
+}) => (
   <TouchableOpacity
     style={[styles.tabItem, isActive && styles.activeTabItem]}
     onPress={onPress}
@@ -34,27 +39,32 @@ const TabItem: React.FC<TabItemProps> = ({ title, icon, isActive, onPress }) => 
       size={24}
       color={isActive ? COLORS.primary : COLORS.textSecondary}
     />
-    <Text
-      style={[
-        styles.tabText,
-        isActive && styles.activeTabText,
-      ]}
-    >
+    <Text style={[styles.tabText, isActive && styles.activeTabText]}>
       {title}
     </Text>
   </TouchableOpacity>
 );
 
 const HomeScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('users');
+  const route = useRoute();
+  const [activeTab, setActiveTab] = useState<TabType>("users");
+
+  useEffect(() => {
+    if (route.params && "activeTab" in route.params) {
+      const tab = route.params.activeTab as TabType;
+      if (tab && ["users", "marketplace", "services"].includes(tab)) {
+        setActiveTab(tab);
+      }
+    }
+  }, [route.params]);
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'users':
+      case "users":
         return <UsersTab />;
-      case 'marketplace':
+      case "marketplace":
         return <MarketplaceTab />;
-      case 'services':
+      case "services":
         return <ServicesTab />;
     }
   };
@@ -66,26 +76,24 @@ const HomeScreen: React.FC = () => {
         <TabItem
           title="Users"
           icon="account-group"
-          isActive={activeTab === 'users'}
-          onPress={() => setActiveTab('users')}
+          isActive={activeTab === "users"}
+          onPress={() => setActiveTab("users")}
         />
         <TabItem
           title="Marketplace"
           icon="shopping"
-          isActive={activeTab === 'marketplace'}
-          onPress={() => setActiveTab('marketplace')}
+          isActive={activeTab === "marketplace"}
+          onPress={() => setActiveTab("marketplace")}
         />
         <TabItem
           title="Services"
           icon="briefcase"
-          isActive={activeTab === 'services'}
-          onPress={() => setActiveTab('services')}
+          isActive={activeTab === "services"}
+          onPress={() => setActiveTab("services")}
         />
       </View>
 
-      <View style={styles.content}>
-        {renderContent()}
-      </View>
+      <View style={styles.content}>{renderContent()}</View>
     </SafeAreaView>
   );
 };
@@ -97,9 +105,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.md,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     paddingBottom: SPACING.sm,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -107,8 +115,8 @@ const styles = StyleSheet.create({
     marginVertical: SPACING.sm,
   },
   searchButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.background,
     padding: SPACING.sm,
     borderRadius: 12,
@@ -120,20 +128,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   tabs: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
+    flexDirection: "row",
+    backgroundColor: "white",
     paddingVertical: SPACING.xs,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   tabItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: SPACING.sm,
     gap: SPACING.xs,
   },
   activeTabItem: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   tabText: {
     fontSize: 12,
@@ -141,11 +149,11 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   content: {
     flex: 1,
   },
 });
 
-export default HomeScreen; 
+export default HomeScreen;

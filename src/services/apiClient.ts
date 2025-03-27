@@ -22,11 +22,10 @@ export const createApiClient = (baseURL: string) => {
       return Promise.reject(error);
     }
   );
-
   return api;
 };
 
-//  iOS use localhost, on Android 10.0.2.2
+// iOS use localhost, on Android 10.0.2.2
 const baseURL = Platform.select({
   ios: 'http://localhost:8000',
   android: 'http://10.0.2.2:8000',

@@ -228,7 +228,9 @@ const UserProfileScreen: React.FC<Props> = ({ route, navigation }) => {
             userId={userId}
             isOwnProfile={false}
             onServicePress={(service) =>
-              console.log("Service pressed:", service)
+              navigation.navigate("ServiceDetails", {
+                serviceId: service.serviceId || service.id,
+              })
             }
           />
         );

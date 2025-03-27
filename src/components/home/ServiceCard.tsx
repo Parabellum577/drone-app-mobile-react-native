@@ -10,6 +10,7 @@ import { COLORS, SPACING } from '../../constants/theme';
 import { Service } from '../../services/service.service';
 import { PriceDisplay } from '../PriceDisplay';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ServiceCategory } from '../../types/service';
 
 type Props = {
   service: Service;
@@ -17,6 +18,18 @@ type Props = {
 };
 
 const ServiceCard: React.FC<Props> = ({ service, onPress }) => {
+  const categoryIcons = {
+    [ServiceCategory.SERVICE]: 'briefcase-outline',
+    [ServiceCategory.EVENT]: 'calendar-star',
+    [ServiceCategory.COURSE]: 'school-outline',
+  };
+
+  const categoryLabels = {
+    [ServiceCategory.SERVICE]: 'Service',
+    [ServiceCategory.EVENT]: 'Event',
+    [ServiceCategory.COURSE]: 'Course',
+  };
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       {service.image && (
@@ -28,7 +41,15 @@ const ServiceCard: React.FC<Props> = ({ service, onPress }) => {
       )}
       
       <View style={styles.content}>
-        <Text style={styles.title}>{service.title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{service.title}</Text>
+          {service.category && (
+            <View style={styles.categoryBadge}>
+              <Icon name={categoryIcons[service.category]} size={14} color={COLORS.primary} />
+              <Text style={styles.categoryLabel}>{categoryLabels[service.category]}</Text>
+            </View>
+          )}
+        </View>
         <Text 
           style={styles.description}
           numberOfLines={2}
@@ -74,11 +95,32 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.md,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    flex: 1,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 120, 255, 0.1)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginLeft: SPACING.xs,
+    gap: 4,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   description: {
     fontSize: 14,

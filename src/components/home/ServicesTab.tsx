@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,19 +7,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-} from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import type { NavigationProp } from '@react-navigation/native';
-import type { RootStackParamList } from '../../types/navigation';
-import { COLORS, SPACING } from '../../constants/theme';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import serviceService, { Service } from '../../services/service.service';
-import ServiceCard from './ServiceCard';
-import SearchHeader from '../common/SearchHeader';
-import FiltersModal from '../services/FiltersModal';
+  ScrollView,
+} from "react-native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
+import type { RootStackParamList } from "../../types/navigation";
+import { COLORS, SPACING } from "../../constants/theme";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import serviceService, { Service } from "../../services/service.service";
+import ServiceCard from "./ServiceCard";
+import SearchHeader from "../common/SearchHeader";
+import FiltersModal from "../services/FiltersModal";
+import { ServiceCategory } from "../../types/service";
 
 type NavigationType = NavigationProp<RootStackParamList>;
-type RouteType = RouteProp<RootStackParamList, 'Main'>;
+type RouteType = RouteProp<RootStackParamList, "Main">;
 
 const ServicesTab: React.FC = () => {
   const navigation = useNavigation<NavigationType>();
@@ -28,32 +30,76 @@ const ServicesTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState({
-    location: '',
+    location: "",
     minPrice: 0,
     maxPrice: 0,
+    category: undefined as ServiceCategory | undefined,
   });
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    currentPage: 0,
+    limit: 10,
+  });
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchServices = async () => {
+  const fetchServices = async (loadMore = false) => {
     try {
       setError(null);
-      setLoading(true);
+      if (!loadMore) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const offset = loadMore ? pagination.currentPage * pagination.limit : 0;
+
       const data = await serviceService.getServices({
         searchTitle: searchQuery,
         location: filters.location,
         minPrice: filters.minPrice,
         maxPrice: filters.maxPrice,
+        category: selectedCategory || undefined,
+        limit: pagination.limit,
+        offset: offset,
       });
-      setServices(data);
+
+      const total = await serviceService.getServicesCount({
+        searchTitle: searchQuery,
+        location: filters.location,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        category: selectedCategory || undefined,
+      });
+
+      setPagination(prev => ({
+        ...prev,
+        total,
+        currentPage: loadMore ? prev.currentPage + 1 : 0,
+      }));
+
+      if (loadMore) {
+        setServices(prev => [...prev, ...data]);
+      } else {
+        setServices(data);
+      }
     } catch (err) {
-      console.error('Error fetching services:', err);
-      setError('Failed to load services');
+      console.error("Error fetching services:", err);
+      setError("Failed to load services");
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    if (loadingMore) return;
+    if (services.length >= pagination.total) return;
+    fetchServices(true);
   };
 
   const onRefresh = () => {
@@ -62,15 +108,22 @@ const ServicesTab: React.FC = () => {
   };
 
   const handleCreateService = () => {
-    navigation.navigate('CreateService');
+    navigation.navigate("CreateService");
   };
 
-  const handleApplyFilters = (newFilters: { location?: string; minPrice?: number; maxPrice?: number }) => {
+  const handleApplyFilters = (newFilters: {
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    category?: ServiceCategory;
+  }) => {
     setFilters({
-      location: newFilters.location || '',
+      location: newFilters.location || "",
       minPrice: newFilters.minPrice || 0,
       maxPrice: newFilters.maxPrice || 0,
+      category: newFilters.category || undefined,
     });
+    setSelectedCategory(newFilters.category || null);
     setFiltersVisible(false);
     fetchServices();
   };
@@ -79,17 +132,17 @@ const ServicesTab: React.FC = () => {
     const timeoutId = setTimeout(() => {
       fetchServices();
     }, 500);
-  
+
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, selectedCategory]);
 
   useEffect(() => {
     const params = route.params as { newService?: Service };
-    if (params?.newService && 'id' in params.newService) {
-      setServices(prev => [params.newService as Service, ...prev]);
+    if (params?.newService && "id" in params.newService) {
+      setServices((prev) => [params.newService as Service, ...prev]);
       navigation.setParams({
-        screen: 'Services',
-        params: { newService: undefined }
+        screen: "Services",
+        params: { newService: undefined },
       });
     }
   }, [route.params]);
@@ -106,10 +159,7 @@ const ServicesTab: React.FC = () => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={fetchServices}
-        >
+        <TouchableOpacity style={styles.retryButton} onPress={() => fetchServices()}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -125,13 +175,18 @@ const ServicesTab: React.FC = () => {
         showFilters
         onFiltersPress={() => setFiltersVisible(true)}
       />
+      
       <FlatList
         data={services}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <ServiceCard 
+          <ServiceCard
             service={item}
-            onPress={() => console.log('Service pressed:', item)}
+            onPress={() =>
+              navigation.navigate("ServiceDetails", {
+                serviceId: item.serviceId,
+              })
+            }
           />
         )}
         contentContainerStyle={styles.list}
@@ -147,12 +202,19 @@ const ServicesTab: React.FC = () => {
             colors={[COLORS.primary]}
           />
         }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.loadingMoreText}>Loading more...</Text>
+            </View>
+          ) : null
+        }
       />
-      
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={handleCreateService}
-      >
+
+      <TouchableOpacity style={styles.fab} onPress={handleCreateService}>
         <Icon name="plus" size={24} color="white" />
       </TouchableOpacity>
       <FiltersModal
@@ -172,8 +234,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   list: {
     padding: SPACING.md,
@@ -189,25 +251,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
   },
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: 16,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: SPACING.lg,
     bottom: SPACING.lg,
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -217,10 +279,21 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 300,
+  },
+  footerLoader: {
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 300,
+    padding: SPACING.md,
+    gap: SPACING.xs,
+  },
+  loadingMoreText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
   },
 });
 
-export default ServicesTab; 
+export default ServicesTab;

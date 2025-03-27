@@ -10,9 +10,13 @@ export type RootStackParamList = {
     params?: {
       newService?: Service;
       refresh?: number;
+      serviceId?: string;
     };
   };
   CreateService: undefined;
+  ServiceDetails: {
+    serviceId: string;
+  };
   UserProfile: {
     userId: string;
     username: string;
@@ -22,10 +26,13 @@ export type RootStackParamList = {
 };
 
 export type TabParamList = {
-  Home: undefined;
+  Home: {
+    activeTab?: 'users' | 'marketplace' | 'services';
+  };
   Profile: { refresh?: number };
   Inbox: undefined;
   EditProfile: undefined;
+  ServiceDetails: { serviceId: string };
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
