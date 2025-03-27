@@ -72,7 +72,6 @@ const FiltersModal: React.FC<Props> = ({
                     setLocation(loc);
                   }}
                   placeholder="Enter location"
-                  listPosition="absolute"
                 />
               </View>
             </View>
@@ -108,7 +107,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
   },
   safeArea: {
     paddingTop: SPACING.xl,
@@ -140,7 +138,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     padding: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    paddingBottom: SPACING.xl + 16,
     gap: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,

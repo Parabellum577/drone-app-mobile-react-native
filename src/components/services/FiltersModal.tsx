@@ -71,16 +71,6 @@ const FiltersModal: React.FC<Props> = ({
 
             <View style={styles.filters}>
               <View style={styles.field}>
-                <Text style={styles.label}>Location</Text>
-                <LocationInput
-                  value={location}
-                  onLocationSelect={setLocation}
-                  placeholder="Enter location"
-                  listPosition="absolute"
-                />
-              </View>
-
-              <View style={styles.field}>
                 <Text style={styles.label}>Price Range</Text>
                 <View style={styles.priceRangeContainer}>
                   <Text style={styles.priceText}>${priceRange[0]}</Text>
@@ -101,6 +91,14 @@ const FiltersModal: React.FC<Props> = ({
                   </View>
                   <Text style={styles.priceText}>${priceRange[1]}</Text>
                 </View>
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.label}>Location</Text>
+                <LocationInput
+                  value={location}
+                  onLocationSelect={setLocation}
+                  placeholder="Enter location"
+                />
               </View>
             </View>
 
@@ -135,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "80%",
+    
   },
   safeArea: {
     paddingTop: SPACING.xl,
@@ -212,7 +210,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     padding: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    paddingBottom: SPACING.xl + 16,
     gap: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
