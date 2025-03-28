@@ -71,27 +71,7 @@ const serviceService = {
     const response = await api.get<Paginated<Service>>('/services', { 
       params: Object.keys(params).length > 0 ? params : undefined 
     });
-    return response.data.items;
-  },
-
-  // Get total count of services
-  getServicesCount: async (query?: ServiceQuery) => {
-    const params = {
-      ...(query?.searchTitle && { searchTitle: query.searchTitle }),
-      ...(query?.location && { location: query.location }),
-      ...(query?.minPrice && { minPrice: query.minPrice }),
-      ...(query?.maxPrice && { maxPrice: query.maxPrice }),
-      ...(query?.category && { category: query.category }),
-    };
-    
-    const response = await api.get<Paginated<Service>>('/services', { 
-      params: {
-        ...Object.keys(params).length > 0 ? params : undefined,
-        limit: 1,
-        offset: 0
-      }
-    });
-    return response.data.total;
+    return response.data;
   },
 
   // Get service by ID

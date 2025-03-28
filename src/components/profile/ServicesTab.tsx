@@ -39,43 +39,46 @@ const ServicesTab: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     total: 0,
-    currentPage: 0,
+    offset: 0,
     limit: 10,
   });
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchUserServices = async (loadMore = false) => {
+  const fetchUserServices = async (isRefresh = false) => {
     try {
-      if (!loadMore) {
+      if (!isRefresh) {
         setLoading(true);
       } else {
         setLoadingMore(true);
       }
+      
       const data = await serviceService.getUserServices(userId);
 
-      if (!data) {
+      if (!data || !data.items) {
+        setLoading(false);
+        setLoadingMore(false);
         return;
       }
 
-      if (!data.items) {
-        return;
-      }
+      // Get the offset for pagination
+      const offset = isRefresh ? 0 : pagination.offset;
+      const end = offset + pagination.limit;
+      
+      // Get a slice of items for the current page
+      const paginatedData = data.items.slice(offset, end);
 
-      const total = data.total;
-      const start = loadMore ? pagination.currentPage * pagination.limit : 0;
-      const end = start + pagination.limit;
-      const paginatedData = data.items.slice(start, end);
+      // Update pagination data
+      setPagination({
+        total: data.total,
+        offset: offset + paginatedData.length,
+        limit: pagination.limit
+      });
 
-      setPagination((prev) => ({
-        ...prev,
-        total,
-        currentPage: loadMore ? prev.currentPage + 1 : 0,
-      }));
-
-      if (loadMore) {
-        setServices((prev) => [...prev, ...paginatedData]);
-      } else {
+      // Update the services list
+      if (isRefresh) {
         setServices(paginatedData);
+      } else {
+        setServices(prev => [...prev, ...paginatedData]);
       }
     } catch (error) {
       console.error("Error fetching user services:", error);
@@ -88,12 +91,19 @@ const ServicesTab: React.FC<Props> = ({
 
   const handleLoadMore = () => {
     if (loadingMore) return;
-    if (services.length >= pagination.total) return;
-    fetchUserServices(true);
+    if (pagination.offset >= pagination.total) return;
+    fetchUserServices(false);
   };
 
   useEffect(() => {
-    fetchUserServices();
+    // Reset pagination when userId changes
+    setPagination({
+      total: 0,
+      offset: 0,
+      limit: 10
+    });
+    setServices([]);
+    fetchUserServices(true);
   }, [userId]);
 
   if (loading && !services.length) {
@@ -110,7 +120,7 @@ const ServicesTab: React.FC<Props> = ({
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => fetchUserServices()}
+          onPress={() => fetchUserServices(true)}
         >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
@@ -126,7 +136,6 @@ const ServicesTab: React.FC<Props> = ({
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => {
-              console.log("🚀 ~ Navigate to CreateService");
               navigation.navigate("CreateService");
             }}
           >

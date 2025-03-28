@@ -41,23 +41,23 @@ const ServicesTab: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null);
   const [pagination, setPagination] = useState({
     total: 0,
-    currentPage: 0,
+    offset: 0,
     limit: 10,
   });
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchServices = async (loadMore = false) => {
+  const fetchServices = async (isRefresh = false) => {
     try {
       setError(null);
-      if (!loadMore) {
+      if (!isRefresh) {
         setLoading(true);
       } else {
         setLoadingMore(true);
       }
 
-      const offset = loadMore ? pagination.currentPage * pagination.limit : 0;
+      const offset = isRefresh ? 0 : pagination.offset;
 
-      const data = await serviceService.getServices({
+      const response = await serviceService.getServices({
         searchTitle: searchQuery,
         location: filters.location,
         minPrice: filters.minPrice,
@@ -67,24 +67,16 @@ const ServicesTab: React.FC = () => {
         offset: offset,
       });
 
-      const total = await serviceService.getServicesCount({
-        searchTitle: searchQuery,
-        location: filters.location,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        category: selectedCategory || undefined,
+      setPagination({
+        total: response.total,
+        offset: offset + response.items.length,
+        limit: pagination.limit
       });
 
-      setPagination(prev => ({
-        ...prev,
-        total,
-        currentPage: loadMore ? prev.currentPage + 1 : 0,
-      }));
-
-      if (loadMore) {
-        setServices(prev => [...prev, ...data]);
+      if (isRefresh) {
+        setServices(response.items);
       } else {
-        setServices(data);
+        setServices(prev => [...prev, ...response.items]);
       }
     } catch (err) {
       console.error("Error fetching services:", err);
@@ -98,13 +90,13 @@ const ServicesTab: React.FC = () => {
 
   const handleLoadMore = () => {
     if (loadingMore) return;
-    if (services.length >= pagination.total) return;
-    fetchServices(true);
+    if (pagination.offset >= pagination.total) return;
+    fetchServices(false);
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchServices();
+    fetchServices(true);
   };
 
   const handleCreateService = () => {
@@ -125,12 +117,27 @@ const ServicesTab: React.FC = () => {
     });
     setSelectedCategory(newFilters.category || null);
     setFiltersVisible(false);
-    fetchServices();
+    
+    // Reset pagination and trigger a refresh
+    setPagination({
+      total: 0,
+      offset: 0,
+      limit: pagination.limit
+    });
+    setServices([]);
+    fetchServices(true);
   };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchServices();
+      // Reset pagination when search/filters change
+      setPagination({
+        total: 0,
+        offset: 0,
+        limit: pagination.limit
+      });
+      setServices([]);
+      fetchServices(true);
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -159,7 +166,7 @@ const ServicesTab: React.FC = () => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => fetchServices()}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => fetchServices(true)}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>

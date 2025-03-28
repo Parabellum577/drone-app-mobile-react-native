@@ -1,4 +1,5 @@
 import api from './apiClient';
+import { Paginated } from '../types/common';
 
 export interface User {
   id: string;
@@ -35,6 +36,8 @@ interface FollowResponse {
 interface GetUsersParams {
   searchParam?: string;
   location?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export const userService = {
@@ -46,8 +49,14 @@ export const userService = {
     if (params?.location) {
       queryParams.append('location', params.location);
     }
+    if (params?.limit) {
+      queryParams.append('limit', params.limit.toString());
+    }
+    if (params?.offset) {
+      queryParams.append('offset', params.offset.toString());
+    }
     const query = queryParams.toString();
-    const response = await api.get<User[]>(`/users${query ? `?${query}` : ''}`);
+    const response = await api.get<Paginated<User>>(`/users${query ? `?${query}` : ''}`);
     return response.data;
   },
   

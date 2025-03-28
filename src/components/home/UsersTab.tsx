@@ -31,6 +31,11 @@ const UsersTab: React.FC = () => {
   const [filters, setFilters] = useState({
     location: "",
   });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    offset: 0,
+    limit: 10,
+  });
 
   const handleAuthError = async () => {
     await AsyncStorage.removeItem("token");
@@ -40,24 +45,41 @@ const UsersTab: React.FC = () => {
     });
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isRefresh = false) => {
+    // Don't fetch if already loading
+    if (loading && !isRefresh) return;
+    
     try {
-      setError(null);
       setLoading(true);
-      const params: { searchParam?: string; location?: string } = {};
-
-      if (searchQuery) {
-        params.searchParam = searchQuery;
+      setError(null);
+      
+      // Calculate the correct offset
+      const offset = isRefresh ? 0 : pagination.offset;
+      
+      // Create request params
+      const params = {
+        limit: pagination.limit,
+        offset,
+        ...(searchQuery ? { searchParam: searchQuery } : {}),
+        ...(filters.location ? { location: filters.location.trim() } : {})
+      };
+      
+      // Make a single API call
+      const response = await userService.getUsers(params);
+      
+      // Update state with the results
+      if (isRefresh) {
+        setUsers(response.items);
+      } else {
+        setUsers(prev => [...prev, ...response.items]);
       }
-
-      if (filters.location && filters.location.trim() !== "") {
-        params.location = filters.location;
-      }
-
-      const data = await userService.getUsers(
-        Object.keys(params).length > 0 ? params : undefined
-      );
-      setUsers(data);
+      
+      setPagination({
+        total: response.total,
+        offset: offset + response.items.length,
+        limit: pagination.limit
+      });
+      
     } catch (err: any) {
       console.error("Error fetching users:", err);
       if (err?.response?.status === 401) {
@@ -71,23 +93,59 @@ const UsersTab: React.FC = () => {
     }
   };
 
+  const handleLoadMore = () => {
+    // Only load more if not already loading and there are more items to load
+    if (!loading && pagination.offset < pagination.total) {
+      fetchUsers(false);
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
-    fetchUsers();
+    setPagination(prev => ({
+      ...prev,
+      offset: 0
+    }));
+    fetchUsers(true);
   };
 
   const handleApplyFilters = (newFilters: { location?: string }) => {
+    // Update filters and reset pagination
     setFilters({
       location: newFilters.location?.trim() || "",
     });
+    setPagination({
+      total: 0,
+      offset: 0,
+      limit: pagination.limit
+    });
+    setUsers([]);
     setFiltersVisible(false);
+    fetchUsers(true);
   };
 
+  // Initial load
   useEffect(() => {
-    fetchUsers();
-  }, [searchQuery, filters.location]);
+    fetchUsers(true);
+  }, []);
 
-  if (loading && !users.length) {
+  // Handle search changes with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // Reset pagination and list when search changes
+      setPagination({
+        total: 0,
+        offset: 0,
+        limit: pagination.limit
+      });
+      setUsers([]);
+      fetchUsers(true);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  if (loading && users.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -95,13 +153,13 @@ const UsersTab: React.FC = () => {
     );
   }
 
-  if (error && !users.length) {
+  if (error && users.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => fetchUsers()}
+          onPress={() => fetchUsers(true)}
         >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
@@ -134,6 +192,16 @@ const UsersTab: React.FC = () => {
             onRefresh={onRefresh}
             colors={[COLORS.primary]}
           />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loading && users.length > 0 ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.loadingMoreText}>Loading more...</Text>
+            </View>
+          ) : null
         }
       />
       <FiltersModal
@@ -188,6 +256,17 @@ const styles = StyleSheet.create({
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: 16,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.md,
+    gap: SPACING.xs,
+  },
+  loadingMoreText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
   },
 });
 
