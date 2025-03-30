@@ -13,7 +13,10 @@ export type RootStackParamList = {
       serviceId?: string;
     };
   };
-  CreateService: undefined;
+  CreateService: {
+    serviceId?: string;
+    mode?: 'create' | 'edit';
+  } | undefined;
   ServiceDetails: {
     serviceId: string;
   };

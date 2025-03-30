@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,8 +17,9 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import serviceService, { Service } from "../../services/service.service";
 import ServiceCard from "./ServiceCard";
 import SearchHeader from "../common/SearchHeader";
-import FiltersModal from "../services/FiltersModal";
+import FiltersModal, { ServiceFilters } from "../services/FiltersModal";
 import { ServiceCategory } from "../../types/service";
+import debounce from "lodash/debounce";
 
 type NavigationType = NavigationProp<RootStackParamList>;
 type RouteType = RouteProp<RootStackParamList, "Main">;
@@ -32,13 +33,14 @@ const ServicesTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ServiceFilters>({
     location: "",
     minPrice: 0,
     maxPrice: 0,
     category: undefined as ServiceCategory | undefined,
   });
-  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<ServiceCategory | null>(null);
   const [pagination, setPagination] = useState({
     total: 0,
     offset: 0,
@@ -70,13 +72,13 @@ const ServicesTab: React.FC = () => {
       setPagination({
         total: response.total,
         offset: offset + response.items.length,
-        limit: pagination.limit
+        limit: pagination.limit,
       });
 
       if (isRefresh) {
         setServices(response.items);
       } else {
-        setServices(prev => [...prev, ...response.items]);
+        setServices((prev) => [...prev, ...response.items]);
       }
     } catch (err) {
       console.error("Error fetching services:", err);
@@ -103,45 +105,38 @@ const ServicesTab: React.FC = () => {
     navigation.navigate("CreateService");
   };
 
-  const handleApplyFilters = (newFilters: {
-    location?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    category?: ServiceCategory;
-  }) => {
-    setFilters({
-      location: newFilters.location || "",
-      minPrice: newFilters.minPrice || 0,
-      maxPrice: newFilters.maxPrice || 0,
-      category: newFilters.category || undefined,
-    });
+  const handleApplyFilters = (newFilters: ServiceFilters) => {
+    setFilters(newFilters);
     setSelectedCategory(newFilters.category || null);
     setFiltersVisible(false);
-    
+
     // Reset pagination and trigger a refresh
     setPagination({
       total: 0,
       offset: 0,
-      limit: pagination.limit
+      limit: pagination.limit,
     });
     setServices([]);
     fetchServices(true);
   };
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // Reset pagination when search/filters change
-      setPagination({
-        total: 0,
-        offset: 0,
-        limit: pagination.limit
-      });
-      setServices([]);
-      fetchServices(true);
-    }, 500);
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchQuery(value);
+      }, 600),
+    [searchQuery]
+  );
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, filters, selectedCategory]);
+  useEffect(() => {
+    setPagination({
+      total: 0,
+      offset: 0,
+      limit: pagination.limit,
+    });
+    setServices([]);
+    fetchServices(true);
+  }, [searchQuery]);
 
   useEffect(() => {
     const params = route.params as { newService?: Service };
@@ -166,7 +161,10 @@ const ServicesTab: React.FC = () => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => fetchServices(true)}>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => fetchServices(true)}
+        >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -177,12 +175,12 @@ const ServicesTab: React.FC = () => {
     <View style={styles.container}>
       <SearchHeader
         value={searchQuery}
-        onChangeText={setSearchQuery}
+        onChangeText={debouncedSearch}
         placeholder="Search services"
         showFilters
         onFiltersPress={() => setFiltersVisible(true)}
       />
-      
+
       <FlatList
         data={services}
         keyExtractor={(item) => item.id}
@@ -291,9 +289,9 @@ const styles = StyleSheet.create({
     minHeight: 300,
   },
   footerLoader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     padding: SPACING.md,
     gap: SPACING.xs,
   },

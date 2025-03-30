@@ -14,13 +14,15 @@ import { LocationInput } from '../common/LocationInput';
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onApply: (filters: {
-    location?: string;
-  }) => void;
+  onApply: (filters: UserFilters) => void;
   initialFilters: {
     location?: string;
   };
 };
+
+export type UserFilters = {
+  location?: string;
+}
 
 const FiltersModal: React.FC<Props> = ({
   visible,
@@ -31,8 +33,6 @@ const FiltersModal: React.FC<Props> = ({
   const [location, setLocation] = useState(initialFilters.location || '');
 
   const handleApply = () => {
-    console.log('Raw location value:', location);
-    console.log('Location value after trim:', location?.trim());
     onApply({
       location: location || undefined,
     });
@@ -68,7 +68,6 @@ const FiltersModal: React.FC<Props> = ({
                 <LocationInput
                   value={location}
                   onLocationSelect={(loc) => {
-                    console.log('Selected location:', loc);
                     setLocation(loc);
                   }}
                   placeholder="Enter location"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -80,6 +80,7 @@ const getShortDay = (day: string): string => {
 
 const CreateServiceScreen: React.FC = () => {
   const navigation = useNavigation<NavigationType>();
+  const route = useRoute();
   const [loading, setLoading] = useState(false);
   const [isFree, setIsFree] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -87,6 +88,8 @@ const CreateServiceScreen: React.FC = () => {
   const [datePickerType, setDatePickerType] = useState<"start" | "end">(
     "start"
   );
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
 
   const [eventSchedule, setEventSchedule] = useState<EventSchedule>({
     startDate: new Date(),
@@ -107,6 +110,66 @@ const CreateServiceScreen: React.FC = () => {
     location: "",
     category: ServiceCategory.SERVICE,
   });
+
+  useEffect(() => {
+    const params = route.params as { serviceId?: string; mode?: 'create' | 'edit' };
+    
+    if (params?.serviceId && params?.mode === 'edit') {
+      setIsEditMode(true);
+      loadServiceData(params.serviceId);
+    }
+  }, [route.params]);
+
+  const loadServiceData = async (serviceId: string) => {
+    try {
+      setInitialLoading(true);
+      const serviceData = await serviceService.getServiceById(serviceId);
+      
+      if (serviceData) {
+        setForm({
+          title: serviceData.title || '',
+          description: serviceData.description || '',
+          price: serviceData.price ? serviceData.price.toString() : '0',
+          currency: serviceData.currency || Currency.EUR,
+          image: serviceData.image || '',
+          location: serviceData.location || '',
+          category: serviceData.category || ServiceCategory.SERVICE,
+        });
+        
+        setIsFree(serviceData.price === 0);
+        
+        if (serviceData.category === ServiceCategory.EVENT) {
+          const eventData = {
+            startDate: serviceData.startDate ? new Date(serviceData.startDate) : new Date(),
+            endDate: serviceData.endDate ? new Date(serviceData.endDate) : undefined
+          };
+          
+          if (serviceData.startTime) {
+            const [hours, minutes] = serviceData.startTime.split(':').map(Number);
+            eventData.startDate.setHours(hours, minutes);
+          }
+          
+          if (serviceData.endTime && eventData.endDate) {
+            const [hours, minutes] = serviceData.endTime.split(':').map(Number);
+            eventData.endDate.setHours(hours, minutes);
+          }
+          
+          setEventSchedule(eventData);
+        } else if (serviceData.category === ServiceCategory.SERVICE) {
+          setServiceSchedule({
+            availableDays: serviceData.availableDays || [],
+            startTime: serviceData.workingHours?.from || '09:00',
+            endTime: serviceData.workingHours?.to || '18:00'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading service data:', error);
+      Alert.alert('Error', 'Failed to load service data');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (
@@ -160,15 +223,23 @@ const CreateServiceScreen: React.FC = () => {
         ...scheduleData,
       };
 
-      const newService = await serviceService.createService(serviceData);
+      let result;
+      const params = route.params as { serviceId?: string; mode?: 'create' | 'edit' };
+      
+      if (isEditMode && params?.serviceId) {
+        result = await serviceService.updateService(params.serviceId, serviceData);
+        Alert.alert('Success', 'Service updated successfully');
+      } else {
+        result = await serviceService.createService(serviceData);
+      }
 
       navigation.navigate("Main", {
         screen: "Services",
-        params: { newService },
+        params: { newService: result },
       });
     } catch (err) {
-      console.error("Error creating service:", err);
-      Alert.alert("Error", "Failed to create service");
+      console.error(isEditMode ? "Error updating service:" : "Error creating service:", err);
+      Alert.alert("Error", isEditMode ? "Failed to update service" : "Failed to create service");
     } finally {
       setLoading(false);
     }
@@ -638,51 +709,62 @@ const CreateServiceScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-      >
-        <FlatList
-          data={formFields}
-          renderItem={renderFormField}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={true}
-          ListFooterComponent={<View style={styles.bottomPadding} />}
-        />
-      </KeyboardAvoidingView>
+      {initialLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading service data...</Text>
+        </View>
+      ) : (
+        <>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardAvoidingView}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+          >
+            <FlatList
+              data={formFields}
+              renderItem={renderFormField}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={true}
+              ListFooterComponent={<View style={styles.bottomPadding} />}
+            />
+          </KeyboardAvoidingView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.buttonText}>Create Service</Text>
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {isEditMode ? "Update Service" : "Create Service"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={
+                datePickerType === "start"
+                  ? form.category === ServiceCategory.EVENT
+                    ? eventSchedule.startDate
+                    : new Date()
+                  : form.category === ServiceCategory.EVENT
+                  ? eventSchedule.endDate || new Date()
+                  : new Date()
+              }
+              mode={datePickerMode}
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={handleDateChange}
+            />
           )}
-        </TouchableOpacity>
-      </View>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={
-            datePickerType === "start"
-              ? form.category === ServiceCategory.EVENT
-                ? eventSchedule.startDate
-                : new Date()
-              : form.category === ServiceCategory.EVENT
-              ? eventSchedule.endDate || new Date()
-              : new Date()
-          }
-          mode={datePickerMode}
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={handleDateChange}
-        />
+        </>
       )}
     </View>
   );
@@ -907,6 +989,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderLeftWidth: 3,
     borderLeftColor: COLORS.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: 16,
+    color: COLORS.text,
   },
 });
 

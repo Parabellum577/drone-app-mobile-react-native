@@ -10,20 +10,16 @@ import { ServiceCategory } from "../../types/service";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onApply: (filters: {
-    location?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    category?: ServiceCategory;
-  }) => void;
-  initialFilters: {
-    location?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    category?: ServiceCategory;
-  };
+  onApply: (filters: ServiceFilters) => void;
+  initialFilters: ServiceFilters;
 };
 
+export type ServiceFilters = {
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  category?: ServiceCategory;
+}
 const MIN_PRICE = 0;
 const MAX_PRICE = 1000;
 

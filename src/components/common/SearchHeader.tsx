@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SPACING } from '../../constants/theme';
@@ -18,6 +18,13 @@ const SearchHeader: React.FC<Props> = ({
   showFilters,
   onFiltersPress
 }) => {
+  const [search, setSearch] = useState(value);
+
+  const handleChange = (text: string) => {
+    setSearch(text);
+    onChangeText(text);
+  };
+
   return (
     <View style={styles.header}>
       <View style={styles.searchContainer}>
@@ -26,8 +33,8 @@ const SearchHeader: React.FC<Props> = ({
           <TextInput
             style={styles.searchInput}
             placeholder={placeholder}
-            value={value}
-            onChangeText={onChangeText}
+            value={search}
+            onChangeText={handleChange}
             placeholderTextColor={COLORS.textSecondary}
           />
           {showFilters && (

@@ -6,6 +6,7 @@ export const COLORS = {
   border: '#DEE2E6',
   success: '#51CF66',
   error: '#FF6B6B',
+  lightGray: '#E9ECEF',
 };
 
 export const SPACING = {

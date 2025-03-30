@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ import userService, { User } from "../../services/user.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserCard from "./UserCard";
 import SearchHeader from "../common/SearchHeader";
-import FiltersModal from "../users/FiltersModal";
+import FiltersModal, { UserFilters } from "../users/FiltersModal";
+import debounce from "lodash/debounce";
 
 type NavigationType = NavigationProp<RootStackParamList>;
 
@@ -28,7 +29,7 @@ const UsersTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<UserFilters>({
     location: "",
   });
   const [pagination, setPagination] = useState({
@@ -45,41 +46,42 @@ const UsersTab: React.FC = () => {
     });
   };
 
-  const fetchUsers = async (isRefresh = false) => {
+  const fetchUsers = async (isRefresh = false, newFilters?: UserFilters) => {
+    console.log("🚀 ~ fetchUsers")
     // Don't fetch if already loading
     if (loading && !isRefresh) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       // Calculate the correct offset
       const offset = isRefresh ? 0 : pagination.offset;
-      
+      let updatedFilters = newFilters || filters;
       // Create request params
       const params = {
         limit: pagination.limit,
         offset,
         ...(searchQuery ? { searchParam: searchQuery } : {}),
-        ...(filters.location ? { location: filters.location.trim() } : {})
+        ...(updatedFilters.location
+          ? { location: updatedFilters.location.trim() }
+          : {}),
       };
-      
       // Make a single API call
       const response = await userService.getUsers(params);
-      
+
       // Update state with the results
       if (isRefresh) {
         setUsers(response.items);
       } else {
-        setUsers(prev => [...prev, ...response.items]);
+        setUsers((prev) => [...prev, ...response.items]);
       }
-      
+
       setPagination({
         total: response.total,
         offset: offset + response.items.length,
-        limit: pagination.limit
+        limit: pagination.limit,
       });
-      
     } catch (err: any) {
       console.error("Error fetching users:", err);
       if (err?.response?.status === 401) {
@@ -102,14 +104,14 @@ const UsersTab: React.FC = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      offset: 0
+      offset: 0,
     }));
     fetchUsers(true);
   };
 
-  const handleApplyFilters = (newFilters: { location?: string }) => {
+  const handleApplyFilters = (newFilters: UserFilters) => {
     // Update filters and reset pagination
     setFilters({
       location: newFilters.location?.trim() || "",
@@ -117,33 +119,28 @@ const UsersTab: React.FC = () => {
     setPagination({
       total: 0,
       offset: 0,
-      limit: pagination.limit
+      limit: pagination.limit,
     });
     setUsers([]);
-    setFiltersVisible(false);
-    fetchUsers(true);
+    fetchUsers(true, newFilters);
   };
 
-  // Initial load
-  useEffect(() => {
-    fetchUsers(true);
-  }, []);
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchQuery(value);
+      }, 600),
+    [searchQuery]
+  );
 
-  // Handle search changes with debounce
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // Reset pagination and list when search changes
+    useEffect(() => {
       setPagination({
         total: 0,
         offset: 0,
-        limit: pagination.limit
+        limit: pagination.limit,
       });
-      setUsers([]);
       fetchUsers(true);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+    }, [searchQuery]);
 
   if (loading && users.length === 0) {
     return (
@@ -171,7 +168,7 @@ const UsersTab: React.FC = () => {
     <View style={styles.container}>
       <SearchHeader
         value={searchQuery}
-        onChangeText={setSearchQuery}
+        onChangeText={debouncedSearch}
         placeholder="Search users"
         showFilters
         onFiltersPress={() => setFiltersVisible(true)}
@@ -258,9 +255,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   footerLoader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     padding: SPACING.md,
     gap: SPACING.xs,
   },
