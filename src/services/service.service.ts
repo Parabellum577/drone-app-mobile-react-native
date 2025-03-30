@@ -82,7 +82,7 @@ const serviceService = {
 
   // Update service
   updateService: async (serviceId: string, data: Partial<CreateServiceDto>) => {
-    const response = await api.put<Service>(`/services/${serviceId}`, data);
+    const response = await api.patch<Service>(`/services/${serviceId}`, data);
     return response.data;
   },
 

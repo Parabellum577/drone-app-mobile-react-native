@@ -78,6 +78,11 @@ const getShortDay = (day: string): string => {
   return index !== -1 ? DAYS_SHORT[index] : day.substr(0, 3);
 };
 
+const getFullDay = (shortDay: string): string => {
+  const index = DAYS_SHORT.indexOf(shortDay);
+  return index !== -1 ? DAYS_OF_WEEK[index] : shortDay;
+};
+
 const CreateServiceScreen: React.FC = () => {
   const navigation = useNavigation<NavigationType>();
   const route = useRoute();
@@ -112,9 +117,12 @@ const CreateServiceScreen: React.FC = () => {
   });
 
   useEffect(() => {
-    const params = route.params as { serviceId?: string; mode?: 'create' | 'edit' };
-    
-    if (params?.serviceId && params?.mode === 'edit') {
+    const params = route.params as {
+      serviceId?: string;
+      mode?: "create" | "edit";
+    };
+
+    if (params?.serviceId && params?.mode === "edit") {
       setIsEditMode(true);
       loadServiceData(params.serviceId);
     }
@@ -124,48 +132,57 @@ const CreateServiceScreen: React.FC = () => {
     try {
       setInitialLoading(true);
       const serviceData = await serviceService.getServiceById(serviceId);
-      
+
       if (serviceData) {
         setForm({
-          title: serviceData.title || '',
-          description: serviceData.description || '',
-          price: serviceData.price ? serviceData.price.toString() : '0',
+          title: serviceData.title || "",
+          description: serviceData.description || "",
+          price: serviceData.price ? serviceData.price.toString() : "0",
           currency: serviceData.currency || Currency.EUR,
-          image: serviceData.image || '',
-          location: serviceData.location || '',
+          image: serviceData.image || "",
+          location: serviceData.location || "",
           category: serviceData.category || ServiceCategory.SERVICE,
         });
-        
+
         setIsFree(serviceData.price === 0);
-        
+
         if (serviceData.category === ServiceCategory.EVENT) {
           const eventData = {
-            startDate: serviceData.startDate ? new Date(serviceData.startDate) : new Date(),
-            endDate: serviceData.endDate ? new Date(serviceData.endDate) : undefined
+            startDate: serviceData.startDate
+              ? new Date(serviceData.startDate)
+              : new Date(),
+            endDate: serviceData.endDate
+              ? new Date(serviceData.endDate)
+              : undefined,
           };
-          
+
           if (serviceData.startTime) {
-            const [hours, minutes] = serviceData.startTime.split(':').map(Number);
+            const [hours, minutes] = serviceData.startTime
+              .split(":")
+              .map(Number);
             eventData.startDate.setHours(hours, minutes);
           }
-          
+
           if (serviceData.endTime && eventData.endDate) {
-            const [hours, minutes] = serviceData.endTime.split(':').map(Number);
+            const [hours, minutes] = serviceData.endTime.split(":").map(Number);
             eventData.endDate.setHours(hours, minutes);
           }
-          
+
           setEventSchedule(eventData);
         } else if (serviceData.category === ServiceCategory.SERVICE) {
+          const fullDays =
+            serviceData.availableDays?.map((day) => getFullDay(day)) || [];
+
           setServiceSchedule({
-            availableDays: serviceData.availableDays || [],
-            startTime: serviceData.workingHours?.from || '09:00',
-            endTime: serviceData.workingHours?.to || '18:00'
+            availableDays: fullDays,
+            startTime: serviceData.workingHours?.from || "09:00",
+            endTime: serviceData.workingHours?.to || "18:00",
           });
         }
       }
     } catch (error) {
-      console.error('Error loading service data:', error);
-      Alert.alert('Error', 'Failed to load service data');
+      console.error("Error loading service data:", error);
+      Alert.alert("Error", "Failed to load service data");
     } finally {
       setInitialLoading(false);
     }
@@ -224,11 +241,17 @@ const CreateServiceScreen: React.FC = () => {
       };
 
       let result;
-      const params = route.params as { serviceId?: string; mode?: 'create' | 'edit' };
-      
+      const params = route.params as {
+        serviceId?: string;
+        mode?: "create" | "edit";
+      };
+
       if (isEditMode && params?.serviceId) {
-        result = await serviceService.updateService(params.serviceId, serviceData);
-        Alert.alert('Success', 'Service updated successfully');
+        result = await serviceService.updateService(
+          params.serviceId,
+          serviceData
+        );
+        Alert.alert("Success", "Service updated successfully");
       } else {
         result = await serviceService.createService(serviceData);
       }
@@ -238,8 +261,14 @@ const CreateServiceScreen: React.FC = () => {
         params: { newService: result },
       });
     } catch (err) {
-      console.error(isEditMode ? "Error updating service:" : "Error creating service:", err);
-      Alert.alert("Error", isEditMode ? "Failed to update service" : "Failed to create service");
+      console.error(
+        isEditMode ? "Error updating service:" : "Error creating service:",
+        err
+      );
+      Alert.alert(
+        "Error",
+        isEditMode ? "Failed to update service" : "Failed to create service"
+      );
     } finally {
       setLoading(false);
     }
@@ -403,15 +432,24 @@ const CreateServiceScreen: React.FC = () => {
   const toggleServiceDay = (day: string) => {
     setServiceSchedule((prev) => {
       const availableDays = [...prev.availableDays];
-      const index = availableDays.indexOf(day);
+      const index = availableDays.findIndex(
+        d => d.toLowerCase() === day.toLowerCase()
+      );
 
       if (index > -1) {
-        availableDays.splice(index, 1);
+        return {
+          ...prev,
+          availableDays: [
+            ...availableDays.slice(0, index),
+            ...availableDays.slice(index + 1)
+          ]
+        };
       } else {
-        availableDays.push(day);
+        return {
+          ...prev,
+          availableDays: [...availableDays, day]
+        };
       }
-
-      return { ...prev, availableDays };
     });
   };
 
@@ -516,27 +554,31 @@ const CreateServiceScreen: React.FC = () => {
           <View style={styles.scheduleContainer}>
             <Text style={styles.scheduleSubLabel}>Available Days:</Text>
             <View style={styles.daysContainer}>
-              {DAYS_OF_WEEK.map((day) => (
-                <TouchableOpacity
-                  key={day}
-                  style={[
-                    styles.dayButton,
-                    serviceSchedule.availableDays.includes(day) &&
-                      styles.selectedDayButton,
-                  ]}
-                  onPress={() => toggleServiceDay(day)}
-                >
-                  <Text
+              {DAYS_OF_WEEK.map((day) => {
+                const isSelected = serviceSchedule.availableDays.some(
+                  d => d.toLowerCase() === day.toLowerCase()
+                );
+                
+                return (
+                  <TouchableOpacity
+                    key={day}
                     style={[
-                      styles.dayButtonText,
-                      serviceSchedule.availableDays.includes(day) &&
-                        styles.selectedDayButtonText,
+                      styles.dayButton,
+                      isSelected && styles.selectedDayButton,
                     ]}
+                    onPress={() => toggleServiceDay(day)}
                   >
-                    {getShortDay(day)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.dayButtonText,
+                        isSelected && styles.selectedDayButtonText,
+                      ]}
+                    >
+                      {getShortDay(day)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             <View style={styles.scheduleRow}>
@@ -992,8 +1034,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: SPACING.md,
