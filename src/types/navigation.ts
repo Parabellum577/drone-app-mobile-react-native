@@ -2,6 +2,8 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Service } from '../services/service.service';
+import { Product } from './product';
+
 export type RootStackParamList = {
   Login: undefined;
   Registration: undefined;
@@ -9,16 +11,25 @@ export type RootStackParamList = {
     screen?: string;
     params?: {
       newService?: Service;
+      newProduct?: Product;
       refresh?: number;
       serviceId?: string;
+      productId?: string;
     };
   };
   CreateService: {
     serviceId?: string;
     mode?: 'create' | 'edit';
   } | undefined;
+  CreateProduct: {
+    productId?: string;
+    mode?: 'create' | 'edit';
+  } | undefined;
   ServiceDetails: {
     serviceId: string;
+  };
+  ProductDetails: {
+    productId: string;
   };
   UserProfile: {
     userId: string;
@@ -36,6 +47,7 @@ export type TabParamList = {
   Inbox: undefined;
   EditProfile: undefined;
   ServiceDetails: { serviceId: string };
+  ProductDetails: { productId: string };
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<

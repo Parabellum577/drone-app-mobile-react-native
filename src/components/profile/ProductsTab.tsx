@@ -1,79 +1,131 @@
-import React from 'react';
-import { View, FlatList, Image, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Product } from '../../types/profile';
-import { COLORS, SPACING } from '../../constants/theme';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
+import { COLORS, SPACING } from "../../constants/theme";
+import { Product } from "../../types/product";
+import productService from "../../services/product.service";
+import ProductCard from "../products/ProductCard";
 
-interface ProductsTabProps {
-  products: Product[];
+type Props = {
+  userId: string;
+  isOwnProfile?: boolean;
   onProductPress: (product: Product) => void;
-}
+};
 
-const ProductsTab: React.FC<ProductsTabProps> = ({ products, onProductPress }) => {
-  const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity 
-      style={styles.productCard} 
-      onPress={() => onProductPress(item)}
-    >
-      <Image 
-        source={{ uri: item.image }} 
-        style={styles.productImage}
-      />
-      <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.category}>{item.category}</Text>
-        <Text style={styles.price}>{item.price}</Text>
+const ProductsTab: React.FC<Props> = ({
+  userId,
+  isOwnProfile = false,
+  onProductPress,
+}) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await productService.getUserProducts(userId);
+      setProducts(response.items || []);
+    } catch (err) {
+      console.error("Error fetching user products:", err);
+      setError("Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
-    </TouchableOpacity>
-  );
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchProducts}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}>
+          {isOwnProfile ? "You don't have any products yet" : "No products found"}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <FlatList
       data={products}
-      renderItem={renderProduct}
+      renderItem={({ item }) => (
+        <ProductCard product={item} onPress={onProductPress} />
+      )}
       keyExtractor={(item) => item.id}
       numColumns={2}
       columnWrapperStyle={styles.columnWrapper}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={styles.listContainer}
     />
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.sm,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  listContainer: {
+    padding: SPACING.md,
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
-  productCard: {
-    width: '48%',
+  errorText: {
+    color: COLORS.error,
     marginBottom: SPACING.md,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    overflow: 'hidden',
+    textAlign: "center",
   },
-  productImage: {
-    width: '100%',
-    height: 150,
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: 8,
   },
-  productInfo: {
-    padding: SPACING.sm,
+  retryButtonText: {
+    color: "white",
+    fontWeight: "600",
   },
-  productName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  category: {
-    fontSize: 12,
+  emptyText: {
     color: COLORS.textSecondary,
-    marginBottom: SPACING.xs,
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
+    textAlign: "center",
   },
 });
 

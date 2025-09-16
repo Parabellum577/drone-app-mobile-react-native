@@ -6,6 +6,8 @@ import {
   CreateServiceScreen,
   UserProfileScreen,
   EditProfileScreen,
+  ProductDetailsScreen,
+  CreateProductScreen,
 } from '../screens';
 import TabNavigator from './TabNavigator';
 import type { RootStackParamList } from '../types/navigation';
@@ -25,6 +27,16 @@ const RootStackNavigator = () => {
       <Stack.Screen 
         name="CreateService" 
         component={CreateServiceScreen}
+        options={{ headerShown: true }}
+      />
+      <Stack.Screen 
+        name="CreateProduct" 
+        component={CreateProductScreen}
+        options={{ headerShown: true, title: "Create Product" }}
+      />
+      <Stack.Screen 
+        name="ProductDetails" 
+        component={ProductDetailsScreen}
         options={{ headerShown: true }}
       />
       <Stack.Screen 

@@ -13,9 +13,11 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import UsersTab from "../components/home/UsersTab";
 import MarketplaceTab from "../components/home/MarketplaceTab";
 import ServicesTab from "../components/home/ServicesTab";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, RouteProp } from "@react-navigation/native";
+import { TabParamList } from "../types/navigation";
 
 type TabType = "users" | "marketplace" | "services";
+type HomeScreenRouteProp = RouteProp<TabParamList, "Home">;
 
 interface TabItemProps {
   title: string;
@@ -46,15 +48,13 @@ const TabItem: React.FC<TabItemProps> = ({
 );
 
 const HomeScreen: React.FC = () => {
-  const route = useRoute();
+  const route = useRoute<HomeScreenRouteProp>();
   const [activeTab, setActiveTab] = useState<TabType>("users");
 
   useEffect(() => {
-    if (route.params && "activeTab" in route.params) {
-      const tab = route.params.activeTab as TabType;
-      if (tab && ["users", "marketplace", "services"].includes(tab)) {
-        setActiveTab(tab);
-      }
+    const { activeTab: routeTab } = route.params || {};
+    if (routeTab && ["users", "marketplace", "services"].includes(routeTab)) {
+      setActiveTab(routeTab);
     }
   }, [route.params]);
 

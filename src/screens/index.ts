@@ -6,4 +6,6 @@ export { default as CreateServiceScreen } from './CreateServiceScreen';
 export { default as UserProfileScreen } from './UserProfileScreen';
 export { default as EditProfileScreen } from './EditProfileScreen';
 export { default as InboxScreen } from './InboxScreen';
-export { default as ServiceDetailsScreen } from './ServiceDetailsScreen'; 
+export { default as ServiceDetailsScreen } from './ServiceDetailsScreen';
+export { default as ProductDetailsScreen } from './ProductDetailsScreen';
+export { default as CreateProductScreen } from './CreateProductScreen'; 

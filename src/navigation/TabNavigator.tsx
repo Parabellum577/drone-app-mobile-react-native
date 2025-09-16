@@ -10,6 +10,7 @@ import {
   InboxScreen,
   EditProfileScreen,
   ServiceDetailsScreen,
+  ProductDetailsScreen,
 } from "../screens";
 import type { TabParamList } from "../types/navigation";
 import ProfileMenu from "../components/profile/ProfileMenu";
@@ -104,8 +105,25 @@ const TabNavigator = () => {
             <TouchableOpacity
               style={{ marginLeft: SPACING.md }}
               onPress={() =>
-                navigation.navigate("Home", { activeTab: "services" })
+                navigation.navigate("Home")
               }
+            >
+              <Icon name="arrow-left" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <Tab.Screen
+        name="ProductDetails"
+        component={ProductDetailsScreen}
+        options={({ navigation }) => ({
+          tabBarButton: () => null,
+          headerShown: true,
+          title: "Product Details",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={{ marginLeft: SPACING.md }}
+              onPress={() => navigation.goBack()}
             >
               <Icon name="arrow-left" size={24} color={COLORS.text} />
             </TouchableOpacity>
